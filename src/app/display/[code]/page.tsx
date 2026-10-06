@@ -5,12 +5,14 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HostGate } from "@/components/HostGate";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { useBuzzes } from "@/hooks/useBuzzes";
+import { GroupChip } from "@/components/GroupChip";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
+import { type Group, useGroups } from "@/hooks/useGroups";
 import { useParticipants } from "@/hooks/useParticipants";
 import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
 import { formatGap, joinUrl } from "@/lib/format";
-import { useOnParticipantsChanged } from "@/lib/roomEvents";
+import { useOnParticipantsChanged, useOnRoomChanged } from "@/lib/roomEvents";
 
 const MUTE_KEY = "buzzer:display-muted";
 
@@ -27,6 +29,9 @@ function Display({ room }: { room: Tables<"rooms"> }) {
     void refetchParticipants();
     void refetchBuzzes();
   });
+  const groupsOn = room.groups_mode !== "off";
+  const { data: groups, refetch: refetchGroups } = useGroups(room.id, groupsOn);
+  useOnRoomChanged(room.id, "groups", () => void refetchGroups());
   const { run, error } = useRoundActions(room.id);
   const [showQr, setShowQr] = useState(false);
   const [muted, setMuted] = useState(readMuted);
@@ -36,6 +41,16 @@ function Display({ room }: { room: Tables<"rooms"> }) {
     () => new Map(participants?.map((p) => [p.id, p.display_name])),
     [participants],
   );
+  const shownGroups = groupsOn ? groups : undefined;
+  const groupOf = useMemo(() => {
+    const byId = new Map(shownGroups?.map((g) => [g.id, g]));
+    return new Map(
+      participants?.flatMap((p) => {
+        const g = p.group_id ? byId.get(p.group_id) : undefined;
+        return g ? [[p.id, g] as const] : [];
+      }),
+    );
+  }, [shownGroups, participants]);
 
   // Space / → / PageDown: waiting → open → locked → new open round.
   const advance = useCallback(() => {
@@ -119,7 +134,7 @@ function Display({ room }: { room: Tables<"rooms"> }) {
 
       <main className="flex min-h-0 flex-1 items-center justify-center px-[4vw]">
         {!round ? null : hasBuzzes ? (
-          <Results buzzes={buzzes!} names={names} status={round.status} />
+          <Results buzzes={buzzes!} names={names} groupOf={groupOf} status={round.status} />
         ) : status === "open" ? (
           <p className="text-center text-[min(16vw,26vh)] font-black leading-none tracking-tight">
             BUZZERS
@@ -132,7 +147,15 @@ function Display({ room }: { room: Tables<"rooms"> }) {
             <p className="mt-[3vh] text-[4vh] text-white/60">No one buzzed</p>
           </div>
         ) : (
-          <Waiting url={url} code={room.code} joined={participants?.length ?? 0} />
+          <Waiting
+            url={url}
+            code={room.code}
+            joined={participants?.length ?? 0}
+            groups={shownGroups?.map((g) => ({
+              group: g,
+              count: participants?.filter((p) => p.group_id === g.id).length ?? 0,
+            }))}
+          />
         )}
       </main>
 
@@ -154,7 +177,17 @@ function Display({ room }: { room: Tables<"rooms"> }) {
   );
 }
 
-function Waiting({ url, code, joined }: { url: string; code: string; joined: number }) {
+function Waiting({
+  url,
+  code,
+  joined,
+  groups,
+}: {
+  url: string;
+  code: string;
+  joined: number;
+  groups: { group: Group; count: number }[] | undefined;
+}) {
   return (
     <div className="flex items-center gap-[6vw]">
       <div className="rounded-[2vh] bg-white p-[2.5vh]">
@@ -167,6 +200,17 @@ function Waiting({ url, code, joined }: { url: string; code: string; joined: num
         <p className="mt-[3vh] text-[5vh] font-semibold">
           <span className="tabular-nums">{joined}</span> joined
         </p>
+        {groups && groups.length > 0 && (
+          <ul className="flex max-w-[45vw] flex-wrap gap-[1vh]">
+            {groups.map(({ group, count }) => (
+              <li key={group.id}>
+                <GroupChip group={group} className="text-[3vh]">
+                  <span className="tabular-nums opacity-80">{count}</span>
+                </GroupChip>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -175,14 +219,17 @@ function Waiting({ url, code, joined }: { url: string; code: string; joined: num
 function Results({
   buzzes,
   names,
+  groupOf,
   status,
 }: {
   buzzes: Tables<"buzzes">[];
   names: Map<string, string>;
+  groupOf: Map<string, Group>;
   status: Round["status"];
 }) {
   const [first, ...rest] = buzzes;
   const winner = names.get(first.participant_id) ?? "(removed)";
+  const winnerGroup = groupOf.get(first.participant_id);
 
   return (
     <div className="flex w-full flex-col items-center text-center">
@@ -193,12 +240,16 @@ function Results({
       >
         {winner}
       </p>
+      {winnerGroup && <GroupChip group={winnerGroup} className="mt-[2vh] text-[5vh]" />}
       {rest.length > 0 && (
         <ol className="mt-[5vh] flex flex-wrap justify-center gap-x-[5vw] gap-y-[2vh] text-[5vh]">
           {rest.slice(0, 2).map((b, i) => (
             <li key={b.participant_id} className="flex items-baseline gap-[1vw]">
               <span className="font-mono text-white/50">{i + 2}</span>
               <span className="font-semibold">{names.get(b.participant_id) ?? "(removed)"}</span>
+              {groupOf.has(b.participant_id) && (
+                <GroupChip group={groupOf.get(b.participant_id)!} className="self-center text-[2.5vh]" />
+              )}
               <span className="font-mono text-[3vh] text-white/50">
                 {formatGap(first.buzzed_at, b.buzzed_at)}
               </span>

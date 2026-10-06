@@ -5,15 +5,21 @@ import { QRCodeSVG } from "qrcode.react";
 import { use, useMemo, useState } from "react";
 import { useBuzzes } from "@/hooks/useBuzzes";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
+import { type Group, useGroups } from "@/hooks/useGroups";
 import { useParticipants } from "@/hooks/useParticipants";
+import { EntitlementsContext, useRoomEntitlements } from "@/hooks/useRoomEntitlements";
 import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
 import { errorMessage } from "@/lib/errors";
 import { formatGap, joinUrl } from "@/lib/format";
-import { notifyParticipantsChanged } from "@/lib/roomEvents";
+import { notifyParticipantsChanged, notifyRoomChanged } from "@/lib/roomEvents";
 import { getSupabase } from "@/lib/supabase/client";
 import { HostGate } from "@/components/HostGate";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
+import { GroupChip } from "@/components/GroupChip";
+import { ParticipantGroups } from "@/components/host/ParticipantGroups";
+import { RemoveButton } from "@/components/host/RemoveButton";
+import { RoomOptions } from "@/components/host/RoomOptions";
 import { buttonClass } from "@/components/ui";
 
 export default function HostPage({ params }: { params: Promise<{ code: string }> }) {
@@ -26,6 +32,25 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
   const { data: buzzes, refetch: refetchBuzzes } = useBuzzes(round?.id);
   const { data: participants, refetch: refetchParticipants } = useParticipants(room.id);
   const [removeError, setRemoveError] = useState<string>();
+  const entitlements = useRoomEntitlements(room.id);
+  const groupsOn = room.groups_mode !== "off";
+  const { data: groups, refetch: refetchGroups } = useGroups(room.id, groupsOn);
+
+  const groupOf = useMemo(() => {
+    const byId = new Map(groups?.map((g) => [g.id, g]));
+    return new Map(
+      participants?.flatMap((p) => {
+        const g = p.group_id ? byId.get(p.group_id) : undefined;
+        return g ? [[p.id, g] as const] : [];
+      }),
+    );
+  }, [groups, participants]);
+
+  async function onGroupsSaved() {
+    // Deleted groups never reach a room_id-filtered subscription.
+    await refetchGroups();
+    notifyRoomChanged(room.id, "groups");
+  }
 
   const names = useMemo(
     () => new Map(participants?.map((p) => [p.id, p.display_name])),
@@ -51,45 +76,52 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:py-10">
-      <ConnectionBanner />
-      <section className="flex flex-col gap-6">
-        <div className="rounded-2xl border border-neutral-200 p-6 text-center dark:border-neutral-800">
-          {room.title && <h1 className="mb-4 text-xl font-semibold">{room.title}</h1>}
-          <div className="mx-auto w-full max-w-64 rounded-xl bg-white p-3">
-            <QRCodeSVG value={url} size={512} className="h-auto w-full" marginSize={0} />
+    <EntitlementsContext.Provider value={entitlements}>
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:py-10">
+        <ConnectionBanner />
+        <section className="flex flex-col gap-6">
+          <div className="rounded-2xl border border-neutral-200 p-6 text-center dark:border-neutral-800">
+            {room.title && <h1 className="mb-4 text-xl font-semibold">{room.title}</h1>}
+            <div className="mx-auto w-full max-w-64 rounded-xl bg-white p-3">
+              <QRCodeSVG value={url} size={512} className="h-auto w-full" marginSize={0} />
+            </div>
+            <p className="mt-4 text-sm text-neutral-500">Scan or go to</p>
+            <p className="break-all font-medium">{url.replace(/^https?:\/\//, "")}</p>
+            <p className="mt-3 font-mono text-5xl font-bold tracking-[0.2em]">{room.code}</p>
+            <Link
+              href={`/display/${room.code}`}
+              target="_blank"
+              className={`mt-6 w-full ${buttonClass("secondary")}`}
+            >
+              Open display mode ↗
+            </Link>
           </div>
-          <p className="mt-4 text-sm text-neutral-500">Scan or go to</p>
-          <p className="break-all font-medium">{url.replace(/^https?:\/\//, "")}</p>
-          <p className="mt-3 font-mono text-5xl font-bold tracking-[0.2em]">{room.code}</p>
-          <Link
-            href={`/display/${room.code}`}
-            target="_blank"
-            className={`mt-6 w-full ${buttonClass("secondary")}`}
-          >
-            Open display mode ↗
-          </Link>
-        </div>
 
-        <ParticipantList
-          participants={participants ?? []}
-          max={room.max_participants}
-          onRemove={remove}
-          error={removeError}
-        />
-      </section>
+          <ParticipantList
+            room={room}
+            groups={groupsOn ? groups : undefined}
+            participants={participants ?? []}
+            max={room.max_participants}
+            onRemove={remove}
+            error={removeError}
+          />
 
-      <section className="flex flex-col gap-6">
-        <RoundControls roomId={room.id} round={round ?? null} />
-        <BuzzList
-          buzzes={buzzes ?? []}
-          names={names}
-          joined={participants?.length ?? 0}
-          status={round?.status}
-          onRemove={remove}
-        />
-      </section>
-    </main>
+          <RoomOptions room={room} groups={groups} onGroupsSaved={onGroupsSaved} />
+        </section>
+
+        <section className="flex flex-col gap-6">
+          <RoundControls roomId={room.id} round={round ?? null} />
+          <BuzzList
+            buzzes={buzzes ?? []}
+            names={names}
+            joined={participants?.length ?? 0}
+            status={round?.status}
+            groupOf={groupOf}
+            onRemove={remove}
+          />
+        </section>
+      </main>
+    </EntitlementsContext.Provider>
   );
 }
 
@@ -141,12 +173,14 @@ function BuzzList({
   names,
   joined,
   status,
+  groupOf,
   onRemove,
 }: {
   buzzes: Tables<"buzzes">[];
   names: Map<string, string>;
   joined: number;
   status: Round["status"] | undefined;
+  groupOf: Map<string, Group>;
   onRemove: (participantId: string) => void;
 }) {
   const first = buzzes[0];
@@ -192,6 +226,9 @@ function BuzzList({
                 >
                   {names.get(b.participant_id) ?? "(removed)"}
                 </span>
+                {groupOf.has(b.participant_id) && (
+                  <GroupChip group={groupOf.get(b.participant_id)!} className="text-xs" />
+                )}
                 {rank > 1 && first && (
                   <span className="font-mono text-sm text-neutral-500">
                     {formatGap(first.buzzed_at, b.buzzed_at)}
@@ -211,11 +248,16 @@ function BuzzList({
 }
 
 function ParticipantList({
+  room,
+  groups,
   participants,
   max,
   onRemove,
   error,
 }: {
+  room: Tables<"rooms">;
+  /** Set only while groups are on. */
+  groups: Group[] | undefined;
   participants: Tables<"participants">[];
   max: number;
   onRemove: (participantId: string) => void;
@@ -229,7 +271,9 @@ function ParticipantList({
           {participants.length} / {max}
         </span>
       </div>
-      {participants.length === 0 ? (
+      {groups ? (
+        <ParticipantGroups room={room} groups={groups} participants={participants} onRemove={onRemove} />
+      ) : participants.length === 0 ? (
         <p className="text-neutral-500">No one yet. Students scan the QR code to join.</p>
       ) : (
         <ul className="flex flex-wrap gap-2">
@@ -250,19 +294,6 @@ function ParticipantList({
         </p>
       )}
     </div>
-  );
-}
-
-function RemoveButton({ name, onClick }: { name: string | undefined; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={`Remove ${name ?? "participant"}`}
-      title="Remove from room"
-      className="flex size-6 shrink-0 items-center justify-center rounded-full text-neutral-400 opacity-60 hover:bg-red-600 hover:text-white hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
-    >
-      ×
-    </button>
   );
 }
 

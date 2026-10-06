@@ -496,9 +496,9 @@ src/components/student/RevealPlayer.tsx # intro → group clip sequencing, fallb
 ## 12. Build order and acceptance criteria
 
 ### Step A: Migration + SQL tests
-- [ ] New migration applies cleanly on top of the existing schema (`supabase db reset`)
-- [ ] SQL tests pass (section 13)
-- [ ] Types regenerated
+- [x] New migration applies cleanly on top of the existing schema (`npm run db:push` to the hosted project; no Docker)
+- [x] SQL tests pass (section 13): `npm run test:groups`. Gating checks (9, 14) need `SUPABASE_SERVICE_ROLE_KEY`; not yet run
+- [x] Types regenerated
 
 ### Step B: Gating plumbing
 - [ ] `features.ts`, `useRoomEntitlements`, `FeatureGate`, `UpgradePrompt`, env var
@@ -527,7 +527,7 @@ src/components/student/RevealPlayer.tsx # intro → group clip sequencing, fallb
 - [ ] Playwright: 1 host + 8 students covering random groups, a buzz, and an award, verified on the display
 
 ### Step F: Reveal media (section 6)
-- [ ] Bucket, storage policies, `media_assets`, column additions, RPCs (can ship in the same migration as Step A, or a follow-up migration if A has already been applied)
+- [x] Bucket (`buzzer-bucket`), storage policies, `media_assets`, column additions, RPCs (can ship in the same migration as Step A, or a follow-up migration if A has already been applied)
 - [ ] Media picker with upload, library, delete, and labels
 - [ ] Custom reveal sub-section (collapsed, inside Groups) with Intro + per-group pickers and Preview
 - [ ] `RevealPlayer` with intro → group clip sequencing and all fallbacks
