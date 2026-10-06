@@ -10,6 +10,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --animate-buzz-pulse: buzz-pulse 1.2s ease-in-out infinite;
+  @keyframes buzz-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.6); }
+    50% { box-shadow: 0 0 0 1.5rem rgb(220 38 38 / 0); }
+  }
 }
 
 @media (prefers-color-scheme: dark) {

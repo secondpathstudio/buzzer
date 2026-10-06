@@ -202,10 +202,10 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 - [x] `.env.example`, README with local setup and the self-hosting steps from section 8
 
 ### Phase 1: Core buzzer
-- [ ] `/`: Create room → redirects to `/host/[code]`
-- [ ] `/host/[code]`: QR code, code, participant list, Open / Lock / Reset, live ranked buzz list
-- [ ] `/r/[code]`: join form → buzzer with the four states
-- [ ] Non-host visiting `/host/[code]` sees a friendly "not the host" screen
+- [x] `/`: Create room → redirects to `/host/[code]`
+- [x] `/host/[code]`: QR code, code, participant list, Open / Lock / Reset, live ranked buzz list
+- [x] `/r/[code]`: join form → buzzer with the four states
+- [x] Non-host visiting `/host/[code]` sees a friendly "not the host" screen
 - **Done when:** with one host browser and three student browsers (incognito windows), the host opens a round, students buzz, the host sees the correct order within about 1 second, Reset re-arms every student button, and refreshing a student tab keeps them in the room.
 
 ### Phase 2: Display mode
