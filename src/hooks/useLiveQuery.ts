@@ -1,6 +1,9 @@
 "use client";
 
-import type { REALTIME_POSTGRES_CHANGES_LISTEN_EVENT } from "@supabase/supabase-js";
+import type {
+  REALTIME_POSTGRES_CHANGES_LISTEN_EVENT,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Database } from "@/lib/database.types";
 import { getSupabase } from "@/lib/supabase/client";
@@ -15,6 +18,8 @@ type Options<T> = {
   filter: string;
   event?: `${REALTIME_POSTGRES_CHANGES_LISTEN_EVENT}`;
   fetch: () => PromiseLike<T>;
+  /** Called with each realtime event before the refetch (e.g. for a toast). */
+  onEvent?: (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;
 };
 
 type Result<T> = { key: string; data?: T; error?: unknown };
@@ -26,14 +31,16 @@ type Result<T> = { key: string; data?: T; error?: unknown };
  * truth (PLAN.md §6). Bursts of events (e.g. 100 buzzes) collapse into at
  * most one fetch in flight plus one queued.
  */
-export function useLiveQuery<T>({ key, table, filter, event = "*", fetch }: Options<T>) {
+export function useLiveQuery<T>({ key, table, filter, event = "*", fetch, onEvent }: Options<T>) {
   const [result, setResult] = useState<Result<T>>();
 
   const fetchRef = useRef(fetch);
   const keyRef = useRef(key);
+  const onEventRef = useRef(onEvent);
   useEffect(() => {
     fetchRef.current = fetch;
     keyRef.current = key;
+    onEventRef.current = onEvent;
   });
 
   const inFlight = useRef(false);
@@ -78,7 +85,10 @@ export function useLiveQuery<T>({ key, table, filter, event = "*", fetch }: Opti
       .on(
         "postgres_changes",
         { event, schema: "public", table, filter },
-        () => void refetch(),
+        (payload) => {
+          onEventRef.current?.(payload);
+          void refetch();
+        },
       )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") void refetch();

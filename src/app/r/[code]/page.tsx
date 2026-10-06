@@ -10,6 +10,7 @@ import { GroupReveal } from "@/components/student/GroupReveal";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { type Group, useGroups } from "@/hooks/useGroups";
 import { useRoom } from "@/hooks/useRoom";
+import { useScoreboard } from "@/hooks/useScoreboard";
 import { useSession } from "@/hooks/useSession";
 import type { Tables } from "@/lib/database.types";
 import { errorCode, errorMessage, type GroupLabels, isRateLimited } from "@/lib/errors";
@@ -462,6 +463,15 @@ function Buzzer({
     }
   }
 
+  // RLS only sends us point events for ourselves and our group.
+  const { data: board, refetch: refetchBoard } = useScoreboard(room.id, room.points_enabled);
+  const groupId = participant.group_id;
+  useEffect(() => {
+    if (room.points_enabled) void refetchBoard();
+  }, [room.points_enabled, groupId, refetchBoard]);
+  const myTotal = board?.individuals[0]?.total;
+  const groupTotal = group ? board?.groups.find((g) => g.id === group.id)?.total : undefined;
+
   const position = myBuzz && round && myBuzz.roundId === round.id ? myBuzz.position : undefined;
   const state = buttonState(round, position, pending === round?.id);
   const shownError = error?.roundKey === `${round?.id}:${round?.status}` ? error.message : undefined;
@@ -508,6 +518,16 @@ function Buzzer({
           </p>
         )}
       </div>
+      {room.points_enabled && myTotal !== undefined && (
+        <footer className="mt-6 rounded-full bg-neutral-100 px-5 py-2 text-lg font-semibold tabular-nums dark:bg-neutral-900">
+          You: {myTotal}
+          {group && groupTotal !== undefined && (
+            <>
+              {" "}· {group.name}: {groupTotal}
+            </>
+          )}
+        </footer>
+      )}
     </main>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Group } from "@/hooks/useGroups";
 import type { Tables } from "@/lib/database.types";
 import { GroupsSettings } from "./GroupsSettings";
+import { PointsSettings } from "./PointsSettings";
 
 const OPEN_KEY = "buzzer:room-options-open";
 
@@ -42,6 +43,7 @@ export function RoomOptions({
       </summary>
       <div className="flex flex-col gap-6 border-t border-neutral-200 p-6 dark:border-neutral-800">
         <GroupsSettings room={room} groups={groups} onSaved={onGroupsSaved} />
+        <PointsSettings room={room} />
       </div>
     </details>
   );

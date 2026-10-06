@@ -6,15 +6,22 @@ import { HostGate } from "@/components/HostGate";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { useBuzzes } from "@/hooks/useBuzzes";
 import { GroupChip } from "@/components/GroupChip";
+import { Scoreboard } from "@/components/display/Scoreboard";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { type Group, useGroups } from "@/hooks/useGroups";
 import { useParticipants } from "@/hooks/useParticipants";
+import { formatDelta, usePointActions } from "@/hooks/usePointActions";
+import { type PointEvent, useScoreboard } from "@/hooks/useScoreboard";
 import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
+import { readableText } from "@/lib/color";
 import { formatGap, joinUrl } from "@/lib/format";
 import { useOnParticipantsChanged, useOnRoomChanged } from "@/lib/roomEvents";
 
 const MUTE_KEY = "buzzer:display-muted";
+const TOAST_MS = 2500;
+
+type Toast = { id: string; text: string; color: string | undefined };
 
 export default function DisplayPage({ params }: { params: Promise<{ code: string }> }) {
   const code = use(params).code.toUpperCase();
@@ -32,7 +39,11 @@ function Display({ room }: { room: Tables<"rooms"> }) {
   const groupsOn = room.groups_mode !== "off";
   const { data: groups, refetch: refetchGroups } = useGroups(room.id, groupsOn);
   useOnRoomChanged(room.id, "groups", () => void refetchGroups());
-  const { run, error } = useRoundActions(room.id);
+  const { run, error: roundError } = useRoundActions(room.id);
+  const pointsOn = room.points_enabled;
+  const points = usePointActions(room);
+  const [showScores, setShowScores] = useState(false);
+  const [toast, setToast] = useState<Toast>();
   const [showQr, setShowQr] = useState(false);
   const [muted, setMuted] = useState(readMuted);
   const beep = useBeep();
@@ -42,6 +53,31 @@ function Display({ room }: { room: Tables<"rooms"> }) {
     [participants],
   );
   const shownGroups = groupsOn ? groups : undefined;
+
+  // "+10 → Alice · Red" when points are awarded (inserts only, not undo).
+  const toastInfo = useRef({ names, groups: shownGroups });
+  useEffect(() => {
+    toastInfo.current = { names, groups: shownGroups };
+  });
+  const { data: board, refetch: refetchBoard } = useScoreboard(room.id, pointsOn, (payload) => {
+    if (payload.eventType !== "INSERT") return;
+    const e = payload.new as PointEvent;
+    const { names, groups } = toastInfo.current;
+    const group = groups?.find((g) => g.id === e.group_id);
+    const who = e.participant_id ? names.get(e.participant_id) : undefined;
+    const target = [who, group ? `${group.emoji ? `${group.emoji} ` : ""}${group.name}` : undefined]
+      .filter(Boolean)
+      .join(" · ");
+    setToast({ id: e.id, text: `${formatDelta(e.delta)} → ${target || "?"}`, color: group?.color });
+  });
+  useEffect(() => {
+    if (pointsOn) void refetchBoard();
+  }, [pointsOn, participants, groups, refetchBoard]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(undefined), TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
   const groupOf = useMemo(() => {
     const byId = new Map(shownGroups?.map((g) => [g.id, g]));
     return new Map(
@@ -59,6 +95,16 @@ function Display({ room }: { room: Tables<"rooms"> }) {
     else if (round.status === "open") void run("lock_round");
     else void run("reset_round");
   }, [round, run]);
+
+  // A / D: award or deduct the first preset for this round's winner.
+  const winnerId = buzzes?.[0]?.participant_id;
+  const awardWinner = useCallback(
+    (sign: 1 | -1) => {
+      if (!round || !winnerId) return;
+      void points.award(sign * room.point_presets[0], { participantId: winnerId }, { roundId: round.id });
+    },
+    [round, winnerId, points, room.point_presets],
+  );
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -87,6 +133,22 @@ function Display({ room }: { room: Tables<"rooms"> }) {
         case "Q":
           setShowQr((v) => !v);
           break;
+        case "s":
+        case "S":
+          if (pointsOn) setShowScores((v) => !v);
+          break;
+        case "a":
+        case "A":
+          if (pointsOn) awardWinner(1);
+          break;
+        case "d":
+        case "D":
+          if (pointsOn) awardWinner(-1);
+          break;
+        case "z":
+        case "Z":
+          if (pointsOn) void points.undo();
+          break;
         case "m":
         case "M":
           setMuted((v) => {
@@ -100,7 +162,7 @@ function Display({ room }: { room: Tables<"rooms"> }) {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, run, round?.status, beep]);
+  }, [advance, run, round?.status, beep, pointsOn, awardWinner, points]);
 
   // Beep when the first buzz of a round arrives (not on page load).
   const lastCount = useRef<{ roundId: string; count: number }>(undefined);
@@ -133,7 +195,9 @@ function Display({ room }: { room: Tables<"rooms"> }) {
       </header>
 
       <main className="flex min-h-0 flex-1 items-center justify-center px-[4vw]">
-        {!round ? null : hasBuzzes ? (
+        {pointsOn && showScores ? (
+          <Scoreboard board={board} groupsOn={groupsOn} />
+        ) : !round ? null : hasBuzzes ? (
           <Results buzzes={buzzes!} names={names} groupOf={groupOf} status={round.status} />
         ) : status === "open" ? (
           <p className="text-center text-[min(16vw,26vh)] font-black leading-none tracking-tight">
@@ -166,12 +230,32 @@ function Display({ room }: { room: Tables<"rooms"> }) {
         </div>
       )}
 
+      {toast && (
+        <div
+          key={toast.id}
+          role="status"
+          className="absolute top-[8vh] left-1/2 -translate-x-1/2 rounded-full px-[3vw] py-[1.5vh] text-[5vh] font-black shadow-2xl motion-safe:animate-reveal-pop"
+          style={{
+            backgroundColor: toast.color ?? "#ffffff",
+            color: toast.color ? readableText(toast.color) : "#0a0a0a",
+          }}
+        >
+          {toast.text}
+        </div>
+      )}
+
       <footer className="flex items-center justify-between gap-6 px-[3vw] pb-[2vh] text-[1.8vh] text-white/40">
         <span>
           <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> lock ·{" "}
           <Key>Q</Key> QR · <Key>F</Key> fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
+          {pointsOn && (
+            <>
+              {" "}· <Key>S</Key> {showScores ? "buzzer" : "scores"} · <Key>A</Key>/<Key>D</Key> ±
+              {room.point_presets[0]} winner · <Key>Z</Key> undo
+            </>
+          )}
         </span>
-        {error && <span className="text-red-400">{error}</span>}
+        {(roundError ?? points.error) && <span className="text-red-400">{roundError ?? points.error}</span>}
       </footer>
     </div>
   );

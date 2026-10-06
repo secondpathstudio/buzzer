@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useBuzzes } from "@/hooks/useBuzzes";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { type Group, useGroups } from "@/hooks/useGroups";
 import { useParticipants } from "@/hooks/useParticipants";
+import { usePointActions } from "@/hooks/usePointActions";
+import { useScoreboard } from "@/hooks/useScoreboard";
 import { EntitlementsContext, useRoomEntitlements } from "@/hooks/useRoomEntitlements";
 import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
@@ -17,7 +19,9 @@ import { getSupabase } from "@/lib/supabase/client";
 import { HostGate } from "@/components/HostGate";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { GroupChip } from "@/components/GroupChip";
+import { AwardButtons } from "@/components/host/AwardButtons";
 import { ParticipantGroups } from "@/components/host/ParticipantGroups";
+import { PointsPanel } from "@/components/host/PointsPanel";
 import { RemoveButton } from "@/components/host/RemoveButton";
 import { RoomOptions } from "@/components/host/RoomOptions";
 import { buttonClass } from "@/components/ui";
@@ -45,6 +49,15 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
       }),
     );
   }, [groups, participants]);
+
+  const pointsOn = room.points_enabled;
+  const { data: board, refetch: refetchBoard } = useScoreboard(room.id, pointsOn);
+  const points = usePointActions(room);
+  const [deduct, setDeduct] = useState(false);
+  // Names, members and groups feed the scoreboard too.
+  useEffect(() => {
+    if (pointsOn) void refetchBoard();
+  }, [pointsOn, participants, groups, refetchBoard]);
 
   async function onGroupsSaved() {
     // Deleted groups never reach a room_id-filtered subscription.
@@ -111,6 +124,18 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
 
         <section className="flex flex-col gap-6">
           <RoundControls roomId={room.id} round={round ?? null} />
+          {pointsOn && (
+            <PointsPanel
+              room={room}
+              board={board}
+              groupsOn={groupsOn}
+              deduct={deduct}
+              onDeductChange={setDeduct}
+              onAward={(delta, target, reason) => points.award(delta, target, { reason })}
+              onUndo={() => void points.undo()}
+              error={points.error}
+            />
+          )}
           <BuzzList
             buzzes={buzzes ?? []}
             names={names}
@@ -118,6 +143,16 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
             status={round?.status}
             groupOf={groupOf}
             onRemove={remove}
+            award={
+              pointsOn && round
+                ? {
+                    presets: room.point_presets,
+                    deduct,
+                    give: (participantId, delta, reason) =>
+                      points.award(delta, { participantId }, { roundId: round.id, reason }),
+                  }
+                : undefined
+            }
           />
         </section>
       </main>
@@ -175,6 +210,7 @@ function BuzzList({
   status,
   groupOf,
   onRemove,
+  award,
 }: {
   buzzes: Tables<"buzzes">[];
   names: Map<string, string>;
@@ -182,6 +218,12 @@ function BuzzList({
   status: Round["status"] | undefined;
   groupOf: Map<string, Group>;
   onRemove: (participantId: string) => void;
+  /** Set while points are on. */
+  award?: {
+    presets: number[];
+    deduct: boolean;
+    give: (participantId: string, delta: number, reason?: string) => Promise<boolean>;
+  };
 }) {
   const first = buzzes[0];
 
@@ -210,7 +252,7 @@ function BuzzList({
             return (
               <li
                 key={b.participant_id}
-                className={`group flex items-center gap-4 rounded-xl px-4 py-3 ${
+                className={`group flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl px-4 py-3 ${
                   rank === 1
                     ? "bg-amber-100 text-amber-950 dark:bg-amber-400/20 dark:text-amber-100"
                     : "bg-neutral-100 dark:bg-neutral-900"
@@ -233,6 +275,14 @@ function BuzzList({
                   <span className="font-mono text-sm text-neutral-500">
                     {formatGap(first.buzzed_at, b.buzzed_at)}
                   </span>
+                )}
+                {award && names.has(b.participant_id) && (
+                  <AwardButtons
+                    presets={award.presets}
+                    deduct={award.deduct}
+                    label={names.get(b.participant_id)!}
+                    onAward={(delta, reason) => award.give(b.participant_id, delta, reason)}
+                  />
                 )}
                 <RemoveButton
                   name={names.get(b.participant_id)}
