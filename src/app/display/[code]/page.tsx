@@ -9,6 +9,7 @@ import { useParticipants } from "@/hooks/useParticipants";
 import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
 import { formatGap, joinUrl } from "@/lib/format";
+import { useOnParticipantsChanged } from "@/lib/roomEvents";
 
 const MUTE_KEY = "buzzer:display-muted";
 
@@ -19,8 +20,12 @@ export default function DisplayPage({ params }: { params: Promise<{ code: string
 
 function Display({ room }: { room: Tables<"rooms"> }) {
   const { data: round } = useCurrentRound(room.id);
-  const { data: buzzes } = useBuzzes(round?.id);
-  const { data: participants } = useParticipants(room.id);
+  const { data: buzzes, refetch: refetchBuzzes } = useBuzzes(round?.id);
+  const { data: participants, refetch: refetchParticipants } = useParticipants(room.id);
+  useOnParticipantsChanged(room.id, () => {
+    void refetchParticipants();
+    void refetchBuzzes();
+  });
   const { run, error } = useRoundActions(room.id);
   const [showQr, setShowQr] = useState(false);
   const [muted, setMuted] = useState(readMuted);
@@ -188,9 +193,9 @@ function Results({
       </p>
       {rest.length > 0 && (
         <ol className="mt-[5vh] flex flex-wrap justify-center gap-x-[5vw] gap-y-[2vh] text-[5vh]">
-          {rest.slice(0, 2).map((b) => (
+          {rest.slice(0, 2).map((b, i) => (
             <li key={b.participant_id} className="flex items-baseline gap-[1vw]">
-              <span className="font-mono text-white/50">{b.position}</span>
+              <span className="font-mono text-white/50">{i + 2}</span>
               <span className="font-semibold">{names.get(b.participant_id) ?? "(removed)"}</span>
               <span className="font-mono text-[3vh] text-white/50">
                 {formatGap(first.buzzed_at, b.buzzed_at)}

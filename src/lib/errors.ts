@@ -11,13 +11,23 @@ export type BuzzerErrorCode =
   | "too_many_active_rooms"
   | "invalid_name";
 
-type PgError = { message?: string; hint?: string | null } | null | undefined;
+type PgError = { message?: string; hint?: string | null; code?: string; status?: number } | null | undefined;
 
-export function errorCode(error: PgError): BuzzerErrorCode | undefined {
-  return error?.message as BuzzerErrorCode | undefined;
+export function errorCode(error: unknown): BuzzerErrorCode | undefined {
+  return (error as PgError)?.message as BuzzerErrorCode | undefined;
 }
 
-export function errorMessage(error: PgError): string {
+// Supabase Auth's per-IP limit on anonymous sign-ins (README: Rate Limits).
+export function isRateLimited(error: unknown): boolean {
+  const e = error as PgError;
+  return e?.code === "over_request_rate_limit" || e?.status === 429;
+}
+
+export function errorMessage(err: unknown): string {
+  const error = err as PgError;
+  if (isRateLimited(error)) {
+    return "Too many people have joined from this network recently. Wait a minute and try again, or ask the host to raise the sign-in rate limit.";
+  }
   switch (errorCode(error)) {
     case "room_full": {
       const limit = error?.hint?.match(/\d+/)?.[0];

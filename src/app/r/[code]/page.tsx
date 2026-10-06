@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { buttonClass, Message } from "@/components/ui";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { useRoom } from "@/hooks/useRoom";
 import { useSession } from "@/hooks/useSession";
 import type { Tables } from "@/lib/database.types";
-import { errorCode, errorMessage } from "@/lib/errors";
+import { errorCode, errorMessage, isRateLimited } from "@/lib/errors";
+import { isProfane } from "@/lib/profanity";
 import { getSupabase } from "@/lib/supabase/client";
 
 type Participant = Tables<"participants">;
@@ -52,7 +53,13 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
   );
 
   if (sessionError) {
-    return <Message title="Couldn't connect">Check your connection and reload the page.</Message>;
+    return (
+      <Message title="Couldn't connect">
+        {isRateLimited(sessionError)
+          ? errorMessage(sessionError)
+          : "Check your connection and reload the page."}
+      </Message>
+    );
   }
   if (!session || loading) return <Message title="Connecting…" />;
 
@@ -104,6 +111,10 @@ function JoinForm({
 
   async function join(e: React.FormEvent) {
     e.preventDefault();
+    if (isProfane(name)) {
+      setError("That name isn't allowed. Please choose a different one.");
+      return;
+    }
     setJoining(true);
     setError(undefined);
     const { data, error } = await getSupabase().rpc("join_room", {
@@ -181,6 +192,32 @@ function Buzzer({
   const [myBuzz, setMyBuzz] = useState<MyBuzz>();
   const [pending, setPending] = useState<string>(); // round id being buzzed
   const [error, setError] = useState<string>();
+
+  // Once removed, RLS hides the room's rounds from us, so no more updates
+  // arrive. Watch for our own participant row being deleted (a DELETE event
+  // carries the primary key, so an id filter works), and treat losing sight
+  // of the round on a refetch the same way.
+  const onRemovedRef = useRef(onRemoved);
+  useEffect(() => {
+    onRemovedRef.current = onRemoved;
+  });
+  useEffect(() => {
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`me:${participant.id}`)
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "participants", filter: `id=eq.${participant.id}` },
+        () => onRemovedRef.current(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [participant.id]);
+  useEffect(() => {
+    if (round === null) onRemovedRef.current();
+  }, [round]);
 
   // Restore our position after a refresh. Students don't subscribe to buzzes
   // (every buzz would fan out to every phone); one fetch per round is enough.

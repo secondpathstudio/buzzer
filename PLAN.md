@@ -217,7 +217,7 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 - [ ] Turnstile on anonymous sign-in
 - [ ] Error states for every error code in section 5
 - [ ] Reconnect and refetch on `visibilitychange`; offline banner
-- [ ] Host can remove a participant
+- [x] Host can remove a participant
 - [ ] Cleanup cron jobs enabled
 - [ ] Tests: SQL function tests (pgTAP or a SQL script); a Playwright test with 1 host and N student browser contexts
 - [ ] Deployed to Vercel + Supabase Free following section 8

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorMessage } from "@/lib/errors";
+import { isProfane } from "@/lib/profanity";
 import type { Tables } from "@/lib/database.types";
 import { getSupabase } from "@/lib/supabase/client";
 import { ensureSession } from "@/lib/supabase/session";
@@ -36,6 +37,10 @@ export default function Home() {
 
   async function createRoom(e: React.FormEvent) {
     e.preventDefault();
+    if (isProfane(title)) {
+      setError("That room name isn't allowed. Please choose a different one.");
+      return;
+    }
     setCreating(true);
     setError(undefined);
     try {
@@ -46,7 +51,7 @@ export default function Home() {
       if (error) throw error;
       router.push(`/host/${data.code}`);
     } catch (err) {
-      setError(errorMessage(err as { message?: string }));
+      setError(errorMessage(err));
       setCreating(false);
     }
   }

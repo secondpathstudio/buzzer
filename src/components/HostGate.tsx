@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRoom } from "@/hooks/useRoom";
 import { useSession } from "@/hooks/useSession";
 import type { Tables } from "@/lib/database.types";
+import { errorMessage, isRateLimited } from "@/lib/errors";
 import { buttonClass, Message } from "./ui";
 
 /**
@@ -21,7 +22,13 @@ export function HostGate({
   const { data: room, loading } = useRoom(session ? code : null);
 
   if (sessionError) {
-    return <Message title="Couldn't connect">Check your connection and reload the page.</Message>;
+    return (
+      <Message title="Couldn't connect">
+        {isRateLimited(sessionError)
+          ? errorMessage(sessionError)
+          : "Check your connection and reload the page."}
+      </Message>
+    );
   }
   if (!session || loading) return <Message title="Loading…" />;
 
