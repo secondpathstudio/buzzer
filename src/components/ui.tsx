@@ -16,3 +16,16 @@ export function buttonClass(variant: "primary" | "secondary" | "go") {
     go: `${base} bg-green-600 text-white`,
   }[variant];
 }
+
+export function LoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Message title="Couldn't load the room">
+      Check your connection. This page will retry when you&apos;re back online.
+      <div className="mt-6">
+        <button onClick={onRetry} className={buttonClass("primary")}>
+          Try again
+        </button>
+      </div>
+    </Message>
+  );
+}

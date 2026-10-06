@@ -120,7 +120,7 @@ The full SQL is in `supabase/migrations/20261005_buzzer_schema.sql`.
 | `round_not_open` | Show "Round closed". Usually a race; just refresh state. |
 | `not_host` | "Only the host can do that." |
 | `not_a_participant` | Send the student back to the join form |
-| `too_many_active_rooms` | "You already have 3 active rooms." |
+| `too_many_active_rooms` | "You already have the maximum number of active rooms." The landing page lists them (the limit comes from `plans`, so it isn't hard-coded). |
 | `invalid_name` | "Name must be 1–40 characters." |
 
 Generate types with `npm run db:types` (`supabase gen types typescript --linked`).
@@ -215,8 +215,8 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 
 ### Phase 3: Hardening and first real class
 - [ ] Turnstile on anonymous sign-in
-- [ ] Error states for every error code in section 5
-- [ ] Reconnect and refetch on `visibilitychange`; offline banner
+- [x] Error states for every error code in section 5
+- [x] Reconnect and refetch on `visibilitychange`; offline banner
 - [x] Host can remove a participant
 - [ ] Cleanup cron jobs enabled
 - [ ] Tests: SQL function tests (pgTAP or a SQL script); a Playwright test with 1 host and N student browser contexts

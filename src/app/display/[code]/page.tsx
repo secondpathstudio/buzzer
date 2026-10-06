@@ -3,6 +3,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HostGate } from "@/components/HostGate";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { useBuzzes } from "@/hooks/useBuzzes";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { useParticipants } from "@/hooks/useParticipants";
@@ -106,6 +107,7 @@ function Display({ room }: { room: Tables<"rooms"> }) {
         status === "open" && !hasBuzzes ? "animate-open-pulse" : "bg-neutral-950"
       }`}
     >
+      <ConnectionBanner />
       <header className="flex items-center justify-between px-[3vw] pt-[2vh] text-[2.2vh] text-white/60">
         <span className="truncate">{room.title ?? ""}</span>
         {round && (

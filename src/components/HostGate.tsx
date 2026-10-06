@@ -5,7 +5,7 @@ import { useRoom } from "@/hooks/useRoom";
 import { useSession } from "@/hooks/useSession";
 import type { Tables } from "@/lib/database.types";
 import { errorMessage, isRateLimited } from "@/lib/errors";
-import { buttonClass, Message } from "./ui";
+import { buttonClass, LoadError, Message } from "./ui";
 
 /**
  * Renders children only for the room's host. The database enforces this too
@@ -19,7 +19,7 @@ export function HostGate({
   children: (room: Tables<"rooms">) => React.ReactNode;
 }) {
   const { session, error: sessionError } = useSession();
-  const { data: room, loading } = useRoom(session ? code : null);
+  const { data: room, loading, error, refetch } = useRoom(session ? code : null);
 
   if (sessionError) {
     return (
@@ -31,6 +31,8 @@ export function HostGate({
     );
   }
   if (!session || loading) return <Message title="Loading…" />;
+  // A failed fetch isn't "not the host"; don't say so.
+  if (error && room === undefined) return <LoadError onRetry={() => void refetch()} />;
 
   if (!room || room.host_id !== session.user.id) {
     return (

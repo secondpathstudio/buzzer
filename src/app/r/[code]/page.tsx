@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import { buttonClass, Message } from "@/components/ui";
+import { buttonClass, LoadError, Message } from "@/components/ui";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { useRoom } from "@/hooks/useRoom";
 import { useSession } from "@/hooks/useSession";
@@ -19,7 +20,9 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
   const code = use(params).code.toUpperCase();
   const { session, error: sessionError } = useSession();
   // RLS only shows the room once we've joined (or if we're the host).
-  const { data: room, loading, refetch: refetchRoom } = useRoom(session ? code : null);
+  const { data: room, loading, error: roomError, refetch: refetchRoom } = useRoom(
+    session ? code : null,
+  );
 
   const [me, setMe] = useState<{ roomId: string; participant: Participant | null }>();
   const [editingName, setEditingName] = useState(false);
@@ -62,6 +65,7 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
     );
   }
   if (!session || loading) return <Message title="Connecting…" />;
+  if (roomError && room === undefined) return <LoadError onRetry={() => void refetchRoom()} />;
 
   const participant = room && me?.roomId === room.id ? me.participant : undefined;
   if (room && participant === undefined) return <Message title="Connecting…" />;
@@ -191,7 +195,8 @@ function Buzzer({
   const { data: round, refetch: refetchRound } = useCurrentRound(room.id);
   const [myBuzz, setMyBuzz] = useState<MyBuzz>();
   const [pending, setPending] = useState<string>(); // round id being buzzed
-  const [error, setError] = useState<string>();
+  // Tagged with the round state it happened in, so it clears when the round moves on.
+  const [error, setError] = useState<{ message: string; roundKey: string }>();
 
   // Once removed, RLS hides the room's rounds from us, so no more updates
   // arrive. Watch for our own participant row being deleted (a DELETE event
@@ -258,18 +263,21 @@ function Buzzer({
         onRemoved();
         break;
       case "round_not_open":
+      case "round_not_found":
         void refetchRound();
         break;
       default:
-        setError(errorMessage(error));
+        setError({ message: errorMessage(error), roundKey: `${round.id}:${round.status}` });
     }
   }
 
   const position = myBuzz && round && myBuzz.roundId === round.id ? myBuzz.position : undefined;
   const state = buttonState(round, position, pending === round?.id);
+  const shownError = error?.roundKey === `${round?.id}:${round?.status}` ? error.message : undefined;
 
   return (
     <main className="flex flex-1 flex-col items-center px-4 pt-6 pb-10">
+      <ConnectionBanner />
       <header className="flex w-full max-w-md items-center justify-between gap-3 text-sm text-neutral-500">
         <span className="truncate">{room.title ?? room.code}</span>
         <button onClick={onEditName} className="shrink-0 truncate underline">
@@ -299,9 +307,9 @@ function Buzzer({
           </span>
         </button>
         {round && <p className="text-neutral-500">Round {round.number}</p>}
-        {error && (
+        {shownError && (
           <p role="alert" className="text-center text-red-600 dark:text-red-400">
-            {error}
+            {shownError}
           </p>
         )}
       </div>

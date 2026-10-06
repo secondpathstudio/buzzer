@@ -11,7 +11,10 @@ export type BuzzerErrorCode =
   | "too_many_active_rooms"
   | "invalid_name";
 
-type PgError = { message?: string; hint?: string | null; code?: string; status?: number } | null | undefined;
+type PgError =
+  | { message?: string; hint?: string | null; code?: string; status?: number; name?: string }
+  | null
+  | undefined;
 
 export function errorCode(error: unknown): BuzzerErrorCode | undefined {
   return (error as PgError)?.message as BuzzerErrorCode | undefined;
@@ -23,10 +26,23 @@ export function isRateLimited(error: unknown): boolean {
   return e?.code === "over_request_rate_limit" || e?.status === 429;
 }
 
+// The request never reached Supabase. Browsers word this differently:
+// Chrome "Failed to fetch", Safari "Load failed", Firefox "NetworkError…".
+export function isNetworkError(error: unknown): boolean {
+  const e = error as PgError;
+  return (
+    e?.name === "AuthRetryableFetchError" ||
+    /failed to fetch|load failed|networkerror|network request failed/i.test(e?.message ?? "")
+  );
+}
+
 export function errorMessage(err: unknown): string {
   const error = err as PgError;
   if (isRateLimited(error)) {
     return "Too many people have joined from this network recently. Wait a minute and try again, or ask the host to raise the sign-in rate limit.";
+  }
+  if (isNetworkError(error)) {
+    return "No connection. Check your wifi and try again.";
   }
   switch (errorCode(error)) {
     case "room_full": {
@@ -36,6 +52,7 @@ export function errorMessage(err: unknown): string {
     case "room_not_found":
       return "Room not found or expired. Check the code.";
     case "round_not_open":
+    case "round_not_found":
       return "Round closed.";
     case "round_not_waiting":
       return "That round has already been opened.";
@@ -43,8 +60,10 @@ export function errorMessage(err: unknown): string {
       return "Only the host can do that.";
     case "not_a_participant":
       return "You're not in this room yet.";
+    case "not_authenticated":
+      return "Your session expired. Reload the page.";
     case "too_many_active_rooms":
-      return "You already have 3 active rooms.";
+      return "You already have the maximum number of active rooms. Open one below, or wait for one to expire (rooms last 24 hours).";
     case "invalid_name":
       return "Name must be 1–40 characters.";
     default:

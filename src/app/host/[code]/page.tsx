@@ -13,6 +13,7 @@ import { formatGap, joinUrl } from "@/lib/format";
 import { notifyParticipantsChanged } from "@/lib/roomEvents";
 import { getSupabase } from "@/lib/supabase/client";
 import { HostGate } from "@/components/HostGate";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { buttonClass } from "@/components/ui";
 
 export default function HostPage({ params }: { params: Promise<{ code: string }> }) {
@@ -51,6 +52,7 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
 
   return (
     <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:py-10">
+      <ConnectionBanner />
       <section className="flex flex-col gap-6">
         <div className="rounded-2xl border border-neutral-200 p-6 text-center dark:border-neutral-800">
           {room.title && <h1 className="mb-4 text-xl font-semibold">{room.title}</h1>}
