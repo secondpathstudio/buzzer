@@ -2,61 +2,19 @@
 
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { use, useMemo, useState } from "react";
+import { use, useMemo } from "react";
 import { useBuzzes } from "@/hooks/useBuzzes";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { useParticipants } from "@/hooks/useParticipants";
-import { useRoom } from "@/hooks/useRoom";
-import { useSession } from "@/hooks/useSession";
+import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
-import { errorCode, errorMessage } from "@/lib/errors";
 import { formatGap, joinUrl } from "@/lib/format";
-import { getSupabase } from "@/lib/supabase/client";
-import { buttonClass, Message } from "@/components/ui";
+import { HostGate } from "@/components/HostGate";
+import { buttonClass } from "@/components/ui";
 
 export default function HostPage({ params }: { params: Promise<{ code: string }> }) {
   const code = use(params).code.toUpperCase();
-  const { session, error: sessionError } = useSession();
-  const { data: room, loading } = useRoom(session ? code : null);
-
-  if (sessionError) {
-    return <Message title="Couldn't connect">Check your connection and reload the page.</Message>;
-  }
-  if (!session || loading) return <Message title="Loading…" />;
-
-  if (!room || room.host_id !== session.user.id) {
-    return (
-      <Message title="You're not the host of this room">
-        {room
-          ? "This room was created in a different browser."
-          : "The room doesn't exist, or it was created in a different browser."}{" "}
-        Only the browser that created a room can control it.
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link href={`/r/${code}`} className={buttonClass("primary")}>
-            Join as a student
-          </Link>
-          <Link href="/" className={buttonClass("secondary")}>
-            Create a room
-          </Link>
-        </div>
-      </Message>
-    );
-  }
-
-  if (new Date(room.expires_at) < new Date()) {
-    return (
-      <Message title="This room has expired">
-        Rooms last 24 hours.
-        <div className="mt-6">
-          <Link href="/" className={buttonClass("primary")}>
-            Create a new room
-          </Link>
-        </div>
-      </Message>
-    );
-  }
-
-  return <HostPanel room={room} />;
+  return <HostGate code={code}>{(room) => <HostPanel room={room} />}</HostGate>;
 }
 
 function HostPanel({ room }: { room: Tables<"rooms"> }) {
@@ -81,6 +39,13 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
           <p className="mt-4 text-sm text-neutral-500">Scan or go to</p>
           <p className="break-all font-medium">{url.replace(/^https?:\/\//, "")}</p>
           <p className="mt-3 font-mono text-5xl font-bold tracking-[0.2em]">{room.code}</p>
+          <Link
+            href={`/display/${room.code}`}
+            target="_blank"
+            className={`mt-6 w-full ${buttonClass("secondary")}`}
+          >
+            Open display mode ↗
+          </Link>
         </div>
 
         <ParticipantList
@@ -103,22 +68,7 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
 }
 
 function RoundControls({ roomId, round }: { roomId: string; round: Round | null }) {
-  const [pending, setPending] = useState<string>();
-  const [error, setError] = useState<string>();
-
-  async function run(action: "open_round" | "lock_round" | "reset_round") {
-    setPending(action);
-    setError(undefined);
-    const { error } = await getSupabase().rpc(action, { p_room_id: roomId });
-    // round_not_open / round_not_waiting just mean the state already moved on
-    // (e.g. changed from the display view); realtime will catch us up.
-    const code = errorCode(error);
-    if (error && code !== "round_not_open" && code !== "round_not_waiting") {
-      setError(errorMessage(error));
-    }
-    setPending(undefined);
-  }
-
+  const { run, pending, error } = useRoundActions(roomId);
   const status = round?.status;
 
   return (

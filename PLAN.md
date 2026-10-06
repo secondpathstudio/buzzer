@@ -209,8 +209,8 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 - **Done when:** with one host browser and three student browsers (incognito windows), the host opens a round, students buzz, the host sees the correct order within about 1 second, Reset re-arms every student button, and refreshing a student tab keeps them in the room.
 
 ### Phase 2: Display mode
-- [ ] `/display/[code]` with the three states and keyboard/clicker controls
-- [ ] "Open display mode" link from the host panel
+- [x] `/display/[code]` with the three states and keyboard/clicker controls
+- [x] "Open display mode" link from the host panel
 - **Done when:** the whole round cycle can be run from the keyboard alone, and the winner is readable at full screen from across a room.
 
 ### Phase 3: Hardening and first real class

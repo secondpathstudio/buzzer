@@ -12,6 +12,11 @@
   --font-mono: var(--font-geist-mono);
 
   --animate-buzz-pulse: buzz-pulse 1.2s ease-in-out infinite;
+  --animate-open-pulse: open-pulse 1.6s ease-in-out infinite;
+  @keyframes open-pulse {
+    0%, 100% { background-color: rgb(21 128 61); }
+    50% { background-color: rgb(34 197 94); }
+  }
   @keyframes buzz-pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.6); }
     50% { box-shadow: 0 0 0 1.5rem rgb(220 38 38 / 0); }
