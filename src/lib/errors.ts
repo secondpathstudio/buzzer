@@ -9,7 +9,32 @@ export type BuzzerErrorCode =
   | "not_a_participant"
   | "not_authenticated"
   | "too_many_active_rooms"
-  | "invalid_name";
+  | "invalid_name"
+  // Groups, points & reveal media (PLAN-groups-points.md §6, §8)
+  | "feature_not_available"
+  | "group_required"
+  | "invalid_group"
+  | "group_choice_closed"
+  | "need_at_least_two_groups"
+  | "invalid_group_count"
+  | "invalid_group_name"
+  | "invalid_group_color"
+  | "invalid_group_emoji"
+  | "invalid_group_noun"
+  | "duplicate_group_name"
+  | "invalid_mode"
+  | "points_disabled"
+  | "invalid_presets"
+  | "invalid_target"
+  | "invalid_delta"
+  | "media_limit_reached"
+  | "invalid_media"
+  | "invalid_media_path"
+  | "media_not_uploaded";
+
+/** The room's group labels, for messages that mention them. */
+export type GroupLabels = { group_noun: string; group_noun_plural: string };
+const DEFAULT_LABELS: GroupLabels = { group_noun: "Group", group_noun_plural: "Groups" };
 
 type PgError =
   | { message?: string; hint?: string | null; code?: string; status?: number; name?: string }
@@ -36,8 +61,10 @@ export function isNetworkError(error: unknown): boolean {
   );
 }
 
-export function errorMessage(err: unknown): string {
+export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS): string {
   const error = err as PgError;
+  const noun = labels.group_noun.toLowerCase();
+  const plural = labels.group_noun_plural.toLowerCase();
   if (isRateLimited(error)) {
     return "Too many people have joined from this network recently. Wait a minute and try again, or ask the host to raise the sign-in rate limit.";
   }
@@ -66,6 +93,45 @@ export function errorMessage(err: unknown): string {
       return "You already have the maximum number of active rooms. Open one below, or wait for one to expire (rooms last 24 hours).";
     case "invalid_name":
       return "Name must be 1–40 characters.";
+    case "feature_not_available":
+      // With billing on, gated controls show <UpgradePrompt> before this is reachable.
+      return "This feature isn't enabled on this server.";
+    case "group_required":
+      return `Pick a ${noun} to join.`;
+    case "invalid_group":
+      return `That ${noun} no longer exists. Pick another.`;
+    case "group_choice_closed":
+      return `You're already in a ${noun}.`;
+    case "need_at_least_two_groups":
+      return `Add at least two ${plural} first.`;
+    case "invalid_group_count":
+      return `Use between 2 and 12 ${plural}.`;
+    case "invalid_group_name":
+      return `Each ${noun} needs a name of 1–30 characters.`;
+    case "duplicate_group_name":
+      return `Two ${plural} have the same name.`;
+    case "invalid_group_noun":
+      return "Labels must be 1–20 characters.";
+    case "points_disabled":
+      return "Turn on Points in Room options first.";
+    case "invalid_presets":
+      return "Use 1–6 quick-award amounts, each non-zero and between −1000 and 1000.";
+    case "media_limit_reached": {
+      const limit = error?.hint?.match(/\d+/)?.[0];
+      return `Your media library is full${limit ? ` (${limit} files)` : ""}. Delete one to upload more.`;
+    }
+    case "invalid_media":
+      return "That file isn't in your library.";
+    case "invalid_group_color":
+    case "invalid_group_emoji":
+    case "invalid_mode":
+    case "invalid_target":
+    case "invalid_delta":
+    case "invalid_media_path":
+    case "media_not_uploaded":
+      // Developer errors: the UI shouldn't be able to send these.
+      console.error(error);
+      return "Something went wrong. Please try again.";
     default:
       return "Something went wrong. Please try again.";
   }

@@ -11,7 +11,8 @@
     "db:link": "supabase link",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts",
-    "test:smoke": "node --env-file=.env.local scripts/smoke-test.mjs"
+    "test:smoke": "node --env-file=.env.local scripts/smoke-test.mjs",
+    "test:groups": "node --env-file=.env.local scripts/groups-points-test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
