@@ -21,7 +21,7 @@ No Docker needed: development runs against a hosted Supabase project.
    npm run db:push    # applies supabase/migrations/
    npm run db:types   # regenerates src/lib/database.types.ts
    ```
-   Alternatively, paste `supabase/migrations/20261005_buzzer_schema.sql` into the Supabase SQL Editor.
+   Alternatively, paste each file in `supabase/migrations/` into the Supabase SQL Editor, in filename order.
 4. In the dashboard, under **Authentication → Sign In / Providers**, enable **Anonymous Sign-ins**.
 5. `npm run dev` and open http://localhost:3000.
 
@@ -30,14 +30,14 @@ To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine
 ## Self-hosting
 
 1. Create a free Supabase project.
-2. Apply the migration (`npm run db:link && npm run db:push`, or paste it into the SQL Editor).
+2. Apply the migrations (`npm run db:link && npm run db:push`, or paste each file in `supabase/migrations/` into the SQL Editor, in filename order).
 3. **Authentication → Sign In / Providers:** enable **Anonymous Sign-ins**.
 4. **Authentication → Rate Limits:** raise the anonymous sign-in limit. The default is 30 per hour *per IP*, and a lecture hall on campus wifi often shares one public IP. Set it to several hundred per hour before your first class.
 5. Deploy to Vercel Hobby with the variables from `.env.example`. Set `NEXT_PUBLIC_SITE_URL` to the deployed URL, and use the same URL as the **Site URL** in Supabase Auth settings.
 6. Free-tier limits:
    - About 190 students per room (Supabase Free allows 200 realtime connections per project).
    - Free projects pause after 7 days of inactivity. Restore yours from the dashboard before class.
-7. Optional: enable `pg_cron` and turn on the cleanup jobs at the bottom of the migration. Supabase does not delete anonymous users automatically.
+7. Cleanup runs automatically: the second migration enables `pg_cron` and schedules two daily jobs (04:00 and 04:30 UTC). One deletes rooms 7 days after they expire. The other deletes anonymous users older than 30 days, since Supabase doesn't do this itself. Check runs with `select * from cron.job_run_details order by start_time desc limit 20;`.
 
 ### Changing the participant cap
 

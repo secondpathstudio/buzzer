@@ -179,7 +179,7 @@ Optional: a short sound when the first buzz arrives, with a mute toggle.
 6. **Free-tier limits to know:**
    - About 190 students per room (200 realtime connections per project).
    - Free projects pause after 7 days of inactivity. If a project is paused, restore it from the Supabase dashboard before class.
-7. Optional (Phase 3): enable `pg_cron` and turn on the cleanup jobs at the bottom of the migration. Supabase does not auto-delete anonymous users.
+7. Cleanup: the `cleanup_cron` migration enables `pg_cron` and schedules the purge jobs. Supabase does not auto-delete anonymous users.
 
 ### Environment variables (`.env.example`)
 ```
@@ -218,7 +218,7 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 - [x] Error states for every error code in section 5
 - [x] Reconnect and refetch on `visibilitychange`; offline banner
 - [x] Host can remove a participant
-- [ ] Cleanup cron jobs enabled
+- [x] Cleanup cron jobs enabled (`supabase/migrations/20261006050325_cleanup_cron.sql`)
 - [ ] Tests: SQL function tests (pgTAP or a SQL script); a Playwright test with 1 host and N student browser contexts
 - [ ] Deployed to Vercel + Supabase Free following section 8
 - **Done when:** the app has been used in a real lecture, a 30+ student run works reliably, and someone else could deploy their own copy from the README alone.
