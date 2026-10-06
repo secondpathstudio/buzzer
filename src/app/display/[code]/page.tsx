@@ -231,16 +231,19 @@ function Display({ room }: { room: Tables<"rooms"> }) {
       )}
 
       {toast && (
-        <div
-          key={toast.id}
-          role="status"
-          className="absolute top-[8vh] left-1/2 -translate-x-1/2 rounded-full px-[3vw] py-[1.5vh] text-[5vh] font-black shadow-2xl motion-safe:animate-reveal-pop"
-          style={{
-            backgroundColor: toast.color ?? "#ffffff",
-            color: toast.color ? readableText(toast.color) : "#0a0a0a",
-          }}
-        >
-          {toast.text}
+        // Centred, so the totals at the top of the scoreboard stay visible.
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            key={toast.id}
+            role="status"
+            className="rounded-full px-[3vw] py-[1.5vh] text-[5vh] font-black shadow-2xl motion-safe:animate-reveal-pop"
+            style={{
+              backgroundColor: toast.color ?? "#ffffff",
+              color: toast.color ? readableText(toast.color) : "#0a0a0a",
+            }}
+          >
+            {toast.text}
+          </div>
         </div>
       )}
 

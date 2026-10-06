@@ -8,15 +8,12 @@ import { AwardButtons } from "./AwardButtons";
 
 /**
  * Host scoreboard above the buzz list: group totals (with whole-group
- * awards) or, with groups off, the top students. Holds the −/+ switch and
- * Undo last.
+ * awards) or, with groups off, the top students. Holds Undo last.
  */
 export function PointsPanel({
   room,
   board,
   groupsOn,
-  deduct,
-  onDeductChange,
   onAward,
   onUndo,
   error,
@@ -24,9 +21,7 @@ export function PointsPanel({
   room: Tables<"rooms">;
   board: Scoreboard | undefined;
   groupsOn: boolean;
-  deduct: boolean;
-  onDeductChange: (deduct: boolean) => void;
-  onAward: (delta: number, target: AwardTarget, reason?: string) => Promise<boolean>;
+  onAward: (delta: number, target: AwardTarget) => Promise<boolean>;
   onUndo: () => void;
   error: string | undefined;
 }) {
@@ -37,38 +32,12 @@ export function PointsPanel({
     <div className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-800">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Points</h2>
-        <div className="flex items-center gap-2">
-          <div
-            role="radiogroup"
-            aria-label="Quick buttons award or deduct"
-            className="flex rounded-lg bg-neutral-100 p-0.5 text-sm font-bold dark:bg-neutral-900"
-          >
-            {[false, true].map((d) => (
-              <button
-                key={String(d)}
-                role="radio"
-                aria-checked={deduct === d}
-                aria-label={d ? "Deduct" : "Award"}
-                onClick={() => onDeductChange(d)}
-                className={`rounded-md px-3 py-1 ${
-                  deduct === d
-                    ? d
-                      ? "bg-red-600 text-white"
-                      : "bg-green-600 text-white"
-                    : "text-neutral-500"
-                }`}
-              >
-                {d ? "−" : "+"}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={onUndo}
-            className="rounded-lg border border-neutral-300 px-3 py-1 text-sm font-medium dark:border-neutral-700"
-          >
-            ↶ Undo last
-          </button>
-        </div>
+        <button
+          onClick={onUndo}
+          className="rounded-lg border border-neutral-300 px-3 py-1 text-sm font-medium dark:border-neutral-700"
+        >
+          ↶ Undo last
+        </button>
       </div>
 
       {groups.length > 0 && (
@@ -80,9 +49,8 @@ export function PointsPanel({
               <span className="ml-auto">
                 <AwardButtons
                   presets={room.point_presets}
-                  deduct={deduct}
                   label={g.name}
-                  onAward={(delta, reason) => onAward(delta, { groupId: g.id }, reason)}
+                  onAward={(delta) => onAward(delta, { groupId: g.id })}
                 />
               </span>
             </li>

@@ -53,7 +53,6 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
   const pointsOn = room.points_enabled;
   const { data: board, refetch: refetchBoard } = useScoreboard(room.id, pointsOn);
   const points = usePointActions(room);
-  const [deduct, setDeduct] = useState(false);
   // Names, members and groups feed the scoreboard too.
   useEffect(() => {
     if (pointsOn) void refetchBoard();
@@ -129,9 +128,7 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
               room={room}
               board={board}
               groupsOn={groupsOn}
-              deduct={deduct}
-              onDeductChange={setDeduct}
-              onAward={(delta, target, reason) => points.award(delta, target, { reason })}
+              onAward={(delta, target) => points.award(delta, target)}
               onUndo={() => void points.undo()}
               error={points.error}
             />
@@ -147,9 +144,8 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
               pointsOn && round
                 ? {
                     presets: room.point_presets,
-                    deduct,
-                    give: (participantId, delta, reason) =>
-                      points.award(delta, { participantId }, { roundId: round.id, reason }),
+                    give: (participantId, delta) =>
+                      points.award(delta, { participantId }, { roundId: round.id }),
                   }
                 : undefined
             }
@@ -221,8 +217,7 @@ function BuzzList({
   /** Set while points are on. */
   award?: {
     presets: number[];
-    deduct: boolean;
-    give: (participantId: string, delta: number, reason?: string) => Promise<boolean>;
+    give: (participantId: string, delta: number) => Promise<boolean>;
   };
 }) {
   const first = buzzes[0];
@@ -279,9 +274,8 @@ function BuzzList({
                 {award && names.has(b.participant_id) && (
                   <AwardButtons
                     presets={award.presets}
-                    deduct={award.deduct}
                     label={names.get(b.participant_id)!}
-                    onAward={(delta, reason) => award.give(b.participant_id, delta, reason)}
+                    onAward={(delta) => award.give(b.participant_id, delta)}
                   />
                 )}
                 <RemoveButton
