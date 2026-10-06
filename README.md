@@ -25,7 +25,7 @@ No Docker needed: development runs against a hosted Supabase project.
 4. In the dashboard, under **Authentication → Sign In / Providers**, enable **Anonymous Sign-ins**.
 5. `npm run dev` and open http://localhost:3000.
 
-To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine's LAN address (e.g. `http://192.168.1.20:3000`) so the QR code points somewhere reachable.
+To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine's LAN address (e.g. `http://192.168.1.20:3000`) so the QR code points somewhere reachable. `next.config.ts` allows this machine's LAN addresses as dev origins automatically; Next.js blocks other non-localhost origins in development, and the page hangs.
 
 ## Self-hosting
 
