@@ -6,7 +6,7 @@ import { buttonClass, LoadError, Message } from "@/components/ui";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { GroupChip } from "@/components/GroupChip";
 import { GroupPicker, type PickerGroup } from "@/components/student/GroupPicker";
-import { GroupReveal } from "@/components/student/GroupReveal";
+import { RevealPlayer } from "@/components/student/RevealPlayer";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
 import { type Group, useGroups } from "@/hooks/useGroups";
 import { useRoom } from "@/hooks/useRoom";
@@ -14,21 +14,30 @@ import { useScoreboard } from "@/hooks/useScoreboard";
 import { useSession } from "@/hooks/useSession";
 import type { Tables } from "@/lib/database.types";
 import { errorCode, errorMessage, type GroupLabels, isRateLimited } from "@/lib/errors";
+import { type Media, type MediaKind, mediaUrl } from "@/lib/media";
 import { isProfane } from "@/lib/profanity";
 import { getSupabase } from "@/lib/supabase/client";
 
 type Participant = Tables<"participants">;
+type StoredMedia = { path: string; kind: MediaKind };
 
 /** get_join_info: what the join screen needs before RLS shows us the room. */
 type JoinInfo = GroupLabels & {
   room_id: string;
   title: string | null;
   groups_mode: "off" | "random" | "choose";
-  groups: (PickerGroup & { reveal_media: { path: string; kind: "image" | "video" } | null })[];
-  intro_media: { path: string; kind: "image" | "video" } | null;
+  sorting_text: string | null;
+  groups: (PickerGroup & { reveal_media: StoredMedia | null })[];
   media_bucket: string;
   is_full: boolean;
 };
+
+/** A reveal in progress. Random mode shows the "sorting" suspense; choose mode only the clip. */
+type Reveal = { info: JoinInfo; sorting: boolean };
+
+function toMedia(media: StoredMedia | null, info: JoinInfo): Media | null {
+  return media && { url: mediaUrl(media.path, info.media_bucket), kind: media.kind };
+}
 
 const NAME_KEY = "buzzer:name";
 // Which group's reveal this tab has shown, per room, so a refresh doesn't replay it.
@@ -73,45 +82,107 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
     [refetchRoom],
   );
 
-  if (sessionError) {
-    return (
-      <Message title="Couldn't connect">
-        {isRateLimited(sessionError)
-          ? errorMessage(sessionError)
-          : "Check your connection and reload the page."}
-      </Message>
-    );
-  }
-  if (!session || loading) return <Message title="Connecting…" />;
-  if (roomError && room === undefined) return <LoadError onRetry={() => void refetchRoom()} />;
-
+  // The reveal lives here, above the join form and the buzzer, so the sorting
+  // can start the moment Join is tapped and keep playing through the switch.
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [seen, setSeen] = useState<Record<string, string>>({});
   const participant = room && me?.roomId === room.id ? me.participant : undefined;
-  if (room && participant === undefined) return <Message title="Connecting…" />;
+  const groupId = participant?.group_id ?? undefined;
+  const revealGroup = reveal && groupId ? reveal.info.groups.find((g) => g.id === groupId) : undefined;
 
-  if (room && new Date(room.expires_at) < new Date()) {
-    return <Message title="This room has expired">Ask your host for a new code.</Message>;
+  // Joined, but not into a group this reveal knows about (e.g. the host
+  // edited groups meanwhile): drop it rather than get stuck. A stale one is
+  // replaced below with fresh join info.
+  const activeReveal = reveal && (!participant || revealGroup) ? reveal : null;
+
+  function finishReveal() {
+    if (activeReveal && groupId) {
+      writeRevealSeen(activeReveal.info.room_id, groupId);
+      setSeen((s) => ({ ...s, [activeReveal.info.room_id]: groupId }));
+    }
+    setReveal(null);
   }
 
-  if (!room || !participant || editingName) {
+  // Assigned (or moved, or shuffled) while already in the room.
+  const needsReveal =
+    !activeReveal &&
+    !editingName &&
+    room?.groups_mode === "random" &&
+    !!groupId &&
+    (seen[room.id] ?? readRevealSeen(room.id)) !== groupId;
+  useEffect(() => {
+    if (!needsReveal) return;
+    let cancelled = false;
+    void getSupabase()
+      .rpc("get_join_info", { p_code: code })
+      .then(({ data }) => {
+        if (!cancelled && data) setReveal({ info: data as unknown as JoinInfo, sorting: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsReveal, code]);
+
+  const overlay = activeReveal && (
+    <RevealPlayer
+      group={revealGroup && { ...revealGroup, media: toMedia(revealGroup.reveal_media, activeReveal.info) }}
+      groups={activeReveal.info.groups}
+      noun={activeReveal.info.group_noun}
+      onDone={finishReveal}
+      suspense={activeReveal.sorting}
+      sortingText={activeReveal.info.sorting_text}
+      black={activeReveal.info.groups.some((g) => g.reveal_media)}
+    />
+  );
+
+  return (
+    <>
+      {studentContent()}
+      {overlay}
+    </>
+  );
+
+  function studentContent() {
+    if (sessionError) {
+      return (
+        <Message title="Couldn't connect">
+          {isRateLimited(sessionError)
+            ? errorMessage(sessionError)
+            : "Check your connection and reload the page."}
+        </Message>
+      );
+    }
+    if (!session || loading) return <Message title="Connecting…" />;
+    if (roomError && room === undefined) return <LoadError onRetry={() => void refetchRoom()} />;
+
+    if (room && participant === undefined) return <Message title="Connecting…" />;
+
+    if (room && new Date(room.expires_at) < new Date()) {
+      return <Message title="This room has expired">Ask your host for a new code.</Message>;
+    }
+
+    if (!room || !participant || editingName) {
+      return (
+        <JoinForm
+          code={code}
+          title={room?.title}
+          currentName={participant?.display_name}
+          onJoined={onJoined}
+          onRevealStart={setReveal}
+          onCancel={participant ? () => setEditingName(false) : undefined}
+        />
+      );
+    }
+
     return (
-      <JoinForm
-        code={code}
-        title={room?.title}
-        currentName={participant?.display_name}
-        onJoined={onJoined}
-        onCancel={participant ? () => setEditingName(false) : undefined}
+      <JoinedRoom
+        room={room}
+        participant={participant}
+        onChange={(p) => setMe({ roomId: room.id, participant: p })}
+        onEditName={() => setEditingName(true)}
       />
     );
   }
-
-  return (
-    <JoinedRoom
-      room={room}
-      participant={participant}
-      onChange={(p) => setMe({ roomId: room.id, participant: p })}
-      onEditName={() => setEditingName(true)}
-    />
-  );
 }
 
 function JoinForm({
@@ -119,12 +190,15 @@ function JoinForm({
   title,
   currentName,
   onJoined,
+  onRevealStart,
   onCancel,
 }: {
   code: string;
   title: string | null | undefined;
   currentName?: string;
   onJoined: (p: Participant) => void;
+  /** null cancels (the join failed). */
+  onRevealStart: (reveal: Reveal | null) => void;
   onCancel?: () => void;
 }) {
   const [name, setName] = useState(() => currentName ?? readSavedName());
@@ -163,12 +237,20 @@ function JoinForm({
     }
     setJoining(true);
     setError(undefined);
+    if (info && !currentName) {
+      if (info.groups_mode === "random" && info.groups.length > 0) {
+        onRevealStart({ info, sorting: true });
+      } else if (chosen?.reveal_media) {
+        onRevealStart({ info, sorting: false });
+      }
+    }
     const { data, error } = await getSupabase().rpc("join_room", {
       p_code: code,
       p_display_name: name,
       p_group_id: chosen?.id,
     });
     if (error) {
+      onRevealStart(null);
       setError(errorMessage(error, info));
       setJoining(false);
       if (errorCode(error) === "invalid_group" || errorCode(error) === "group_required") {
@@ -259,7 +341,6 @@ function JoinedRoom({
   const groupsOn = room.groups_mode !== "off";
   const { data: groups, refetch: refetchGroups } = useGroups(room.id, groupsOn);
   const group = groupsOn ? groups?.find((g) => g.id === participant.group_id) : undefined;
-  const [revealSeen, setRevealSeen] = useState(() => readRevealSeen(room.id));
 
   // Once removed, RLS hides the room from us, so no more updates arrive.
   // A DELETE event carries the primary key, so an id filter works for both
@@ -297,7 +378,7 @@ function JoinedRoom({
     };
   }, [participant.id]);
 
-  // Avoid flashing the buzzer before the reveal or picker.
+  // Avoid flashing the buzzer before the picker.
   if (groupsOn && !groups) return <Message title="Connecting…" />;
 
   if (room.groups_mode === "choose" && !group) {
@@ -311,29 +392,14 @@ function JoinedRoom({
     );
   }
 
-  const showReveal = room.groups_mode === "random" && group && revealSeen !== group.id;
-
   return (
-    <>
-      <Buzzer
-        room={room}
-        participant={participant}
-        group={group}
-        onRemoved={() => onChange(null)}
-        onEditName={onEditName}
-      />
-      {showReveal && (
-        <GroupReveal
-          group={group}
-          groups={groups ?? []}
-          noun={room.group_noun}
-          onDone={() => {
-            writeRevealSeen(room.id, group.id);
-            setRevealSeen(group.id);
-          }}
-        />
-      )}
-    </>
+    <Buzzer
+      room={room}
+      participant={participant}
+      group={group}
+      onRemoved={() => onChange(null)}
+      onEditName={onEditName}
+    />
   );
 }
 

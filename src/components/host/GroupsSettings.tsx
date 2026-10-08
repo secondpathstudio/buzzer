@@ -6,6 +6,7 @@ import { GroupChip } from "@/components/GroupChip";
 import { Toggle } from "@/components/ui";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import type { Group } from "@/hooks/useGroups";
+import { useEntitlements } from "@/hooks/useRoomEntitlements";
 import type { Tables } from "@/lib/database.types";
 import { errorMessage } from "@/lib/errors";
 import { FEATURES } from "@/lib/features";
@@ -21,6 +22,8 @@ import {
   SHIPPED_PRESETS,
 } from "@/lib/groupPresets";
 import { getSupabase } from "@/lib/supabase/client";
+import { defaultSortingText } from "@/components/student/GroupReveal";
+import { RevealMediaSettings } from "./RevealMediaSettings";
 
 type Room = Tables<"rooms">;
 type ActiveMode = "random" | "choose";
@@ -102,7 +105,7 @@ export function GroupsSettings({
   );
 }
 
-type Draft = { noun: string; plural: string; groups: GroupDraft[] };
+type Draft = { noun: string; plural: string; sortingText: string; groups: GroupDraft[] };
 
 function GroupsEditor({
   room,
@@ -119,16 +122,18 @@ function GroupsEditor({
   const [modeBusy, setModeBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [localPresets, setLocalPresets] = useState(readLocalPresets);
+  const { has } = useEntitlements();
 
   const current: Draft = draft ?? {
     noun: room.group_noun,
     plural: room.group_noun_plural,
+    sortingText: room.sorting_text ?? "",
     groups: (groups ?? []).map((g) => ({
       id: g.id,
       name: g.name,
       color: g.color,
       emoji: g.emoji,
-      reveal_media_id: g.reveal_media_id,
+      // Omitted: saving keeps whatever Custom reveal has set.
     })),
   };
   const edit = (fn: (d: Draft) => Draft) => setDraft(fn(current));
@@ -188,15 +193,28 @@ function GroupsEditor({
     edit((d) => ({ ...d, groups: d.groups.filter((_, j) => j !== i) }));
   }
 
-  function applyPreset(preset: GroupPreset) {
+  async function applyPreset(preset: GroupPreset) {
+    // Media ids from a saved preset may point at deleted files, and can't be
+    // attached without custom_media: keep only ones still in the library.
+    const wanted = preset.groups.map((g) => g.reveal_media_id).filter(
+      (id): id is string => !!id,
+    );
+    let available = new Set<string>();
+    if (wanted.length && has("custom_media")) {
+      const { data } = await getSupabase().from("media_assets").select("id").in("id", wanted);
+      available = new Set(data?.map((a) => a.id));
+    }
+    const keep = (id: string | null | undefined) => (id && available.has(id) ? id : null);
+
     // Reuse existing ids by position, so students stay put in renamed groups.
     edit((d) => ({
       noun: preset.noun ?? d.noun,
       plural: preset.nounPlural ?? d.plural,
+      sortingText: preset.sortingText !== undefined ? (preset.sortingText ?? "") : d.sortingText,
       groups: preset.groups.slice(0, MAX_GROUPS).map((g, i) => ({
         ...g,
         id: d.groups[i]?.id,
-        reveal_media_id: g.reveal_media_id ?? null,
+        reveal_media_id: keep(g.reveal_media_id),
       })),
     }));
   }
@@ -215,11 +233,15 @@ function GroupsEditor({
         name,
         noun: current.noun,
         nounPlural: current.plural,
+        sortingText: current.sortingText.trim() || null,
         groups: current.groups.map((g) => ({
           name: g.name,
           color: g.color,
           emoji: g.emoji,
-          reveal_media_id: g.reveal_media_id ?? null,
+          reveal_media_id:
+            g.reveal_media_id !== undefined
+              ? g.reveal_media_id
+              : (groups?.find((x) => x.id === g.id)?.reveal_media_id ?? null),
         })),
       }),
     );
@@ -245,6 +267,14 @@ function GroupsEditor({
         })),
       });
       if (error) throw error;
+      const sortingText = current.sortingText.trim();
+      if (sortingText !== (room.sorting_text ?? "")) {
+        const { error } = await supabase.rpc("set_sorting_text", {
+          p_room_id: room.id,
+          p_text: sortingText || undefined,
+        });
+        if (error) throw error;
+      }
       const noun = current.noun.trim() || "Group";
       const plural = current.plural.trim() || "Groups";
       if (noun !== room.group_noun || plural !== room.group_noun_plural) {
@@ -323,6 +353,17 @@ function GroupsEditor({
         </label>
       </div>
 
+      <label className="flex flex-col gap-1 text-sm text-neutral-500">
+        Message while students are sorted
+        <input
+          value={current.sortingText}
+          onChange={(e) => edit((d) => ({ ...d, sortingText: e.target.value }))}
+          placeholder={defaultSortingText(current.noun.trim() || "Group")}
+          maxLength={80}
+          className={`${inputClass} text-neutral-900 dark:text-neutral-100`}
+        />
+      </label>
+
       <ol className="flex flex-col gap-2">
         {current.groups.map((g, i) => (
           <li key={g.id ?? `new-${i}`} className="flex items-center gap-2">
@@ -386,7 +427,7 @@ function GroupsEditor({
           onChange={(e) => {
             const [kind, index] = e.target.value.split(":");
             const preset = (kind === "s" ? SHIPPED_PRESETS : localPresets)[Number(index)];
-            if (preset) applyPreset(preset);
+            if (preset) void applyPreset(preset);
           }}
           aria-label="Apply a preset"
           className={`${smallButton} bg-transparent`}
@@ -437,6 +478,10 @@ function GroupsEditor({
             </span>
           ))}
         </div>
+      )}
+
+      {groups && groups.length > 0 && (
+        <RevealMediaSettings room={room} groups={groups} onChanged={onSaved} />
       )}
 
       {draft && (

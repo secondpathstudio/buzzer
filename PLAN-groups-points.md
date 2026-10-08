@@ -127,6 +127,8 @@ After joining, the student sees a short suspense screen ("Assigning your {group_
 
 ## 6. Reveal media (Step F)
 
+> **Changed 2026-10-08:** the shared intro clip was dropped as too complicated. Each group has one clip, which plays as the sorting moment: the phone shows the built-in suspense screen only while that clip loads. `rooms.reveal_intro_media_id`, `set_room_intro_media` and `get_join_info.intro_media` remain in the schema but are unused by the app.
+
 Hosts can replace the built-in text reveal with their own images or videos: an optional **intro** clip per room, shared by every student, plus an optional **reveal clip per group**. Hosts make one ready-made clip per group (e.g. a character announcing the group name). Playing a shared intro first makes the assignment feel live, even though each group's clip is pre-rendered. Gated by `custom_media`.
 
 ### Reveal sequence (random mode)
@@ -532,7 +534,7 @@ src/components/student/RevealPlayer.tsx # intro → group clip sequencing, fallb
 - [ ] Custom reveal sub-section (collapsed, inside Groups) with Intro + per-group pickers and Preview
 - [ ] `RevealPlayer` with intro → group clip sequencing and all fallbacks
 - [ ] Presets save and apply media IDs, skipping missing assets
-- [ ] README host guide
+- [x] README host guide
 - **Done when:**
   - In random mode with an intro + 4 group clips, 8 students each see the intro and then *their own* group's clip. The network panel shows each student downloaded only the intro and one group clip.
   - With throttling ("Slow 3G"), students fall back to the text reveal within about 6 seconds and still reach the buzzer.

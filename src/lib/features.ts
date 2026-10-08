@@ -11,7 +11,7 @@ export const FEATURES = {
   },
   custom_media: {
     label: "Custom reveal media",
-    description: "Play your own intro and per-group clips when students are assigned.",
+    description: "Play your own clip for each group when students are sorted.",
   },
 } as const;
 

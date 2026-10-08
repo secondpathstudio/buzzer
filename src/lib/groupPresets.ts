@@ -15,6 +15,9 @@ export type GroupPreset = {
   name: string;
   noun?: string;
   nounPlural?: string;
+  /** The message shown while students are sorted; null = the default. */
+  sortingText?: string | null;
+  /** reveal_media_id refers to the host's library; missing ones are skipped. */
   groups: Omit<GroupDraft, "id">[];
 };
 

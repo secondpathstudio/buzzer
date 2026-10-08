@@ -21,6 +21,7 @@ export type BuzzerErrorCode =
   | "invalid_group_color"
   | "invalid_group_emoji"
   | "invalid_group_noun"
+  | "invalid_sorting_text"
   | "duplicate_group_name"
   | "invalid_mode"
   | "points_disabled"
@@ -112,6 +113,8 @@ export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS)
       return `Two ${plural} have the same name.`;
     case "invalid_group_noun":
       return "Labels must be 1–20 characters.";
+    case "invalid_sorting_text":
+      return "The sorting message must be 80 characters or fewer.";
     case "points_disabled":
       return "Turn on Points in Room options first.";
     case "invalid_presets":

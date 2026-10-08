@@ -46,3 +46,32 @@ update public.plans set max_participants = 100 where id = 'free';
 ```
 
 Existing rooms keep the cap they were created with.
+
+## Custom reveal media
+
+With **Groups** on in random mode, each phone can play your own clip for the group it was sorted into (e.g. a character deliberating, then announcing "Red!"). The clip *is* the sorting moment: the phone shows "Assigning your group…" only while the clip loads, then plays it. Set it up under **Room options → Groups → Custom reveal (optional)**: choose or upload a clip for each group, and use **Preview reveal** to check it in a phone-sized frame. Any empty slot falls back to the built-in text reveal. **Save as my preset** remembers the chosen clips for your next room. In choose mode, the clip plays as a confirmation of the student's pick.
+
+Files go into the `buzzer-bucket` storage bucket (created by the `groups_points` migration; public read, upload limit 8 MB). Each phone downloads only its own group's clip.
+
+**Making clips**
+- Short **MP4 (H.264)**, about 5–8 seconds, 720p portrait (720×1280) or square (720×720), no audio needed: usually **1–2 MB**. Images (PNG, JPG, WebP, GIF) work too.
+- Bake the background into the video. Transparent video isn't consistent across phone browsers.
+- Phones play the clips muted (browsers only autoplay muted video). Students can tap 🔊 to turn sound on.
+- Convert GIFs to MP4, which is often 5–10× smaller:
+  ```sh
+  ffmpeg -i in.gif -movflags +faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" out.mp4
+  ```
+- Shrink any video (`+faststart` lets playback begin before the whole file downloads):
+  ```sh
+  ffmpeg -i in.mov -vf "scale=720:-2" -c:v libx264 -crf 28 -preset slow -an -movflags +faststart out.mp4
+  ```
+
+**Bandwidth:** at about 2 MB per student, 150 students is about 300 MB per session, well within Supabase Free's monthly egress for one instructor.
+
+**Fallbacks:** if a group clip hasn't loaded within 6 seconds, or the phone has reduced motion or data saver on, the student gets the built-in text reveal instead. A join never waits on media.
+
+**To change the size limit**, update the bucket (Storage → `buzzer-bucket` → settings) and set `NEXT_PUBLIC_MEDIA_MAX_MB` to match.
+
+Upload third-party or franchise media only to your own instance. **Never commit it to the repo.**
+
+**Known limitations:** the media library belongs to the host's browser session (anonymous), so clearing browser data loses access to it. When the cleanup job deletes old anonymous hosts, their library entries go but the files stay in the bucket.

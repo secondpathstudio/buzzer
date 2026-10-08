@@ -471,6 +471,7 @@ export type Database = {
           point_presets: number[]
           points_enabled: boolean
           reveal_intro_media_id: string | null
+          sorting_text: string | null
           title: string | null
         }
         Insert: {
@@ -487,6 +488,7 @@ export type Database = {
           point_presets?: number[]
           points_enabled?: boolean
           reveal_intro_media_id?: string | null
+          sorting_text?: string | null
           title?: string | null
         }
         Update: {
@@ -503,6 +505,7 @@ export type Database = {
           point_presets?: number[]
           points_enabled?: boolean
           reveal_intro_media_id?: string | null
+          sorting_text?: string | null
           title?: string | null
         }
         Relationships: [
@@ -899,6 +902,16 @@ export type Database = {
           reveal_intro_media_id: string | null
           title: string | null
         }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_sorting_text: {
+        Args: { p_room_id: string; p_text?: string }
+        Returns: Database["public"]["Tables"]["rooms"]["Row"]
         SetofOptions: {
           from: "*"
           to: "rooms"
