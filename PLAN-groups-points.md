@@ -432,7 +432,7 @@ create index on public.point_events (room_id) where voided_at is null;
   - Each participant row has a "Move to…" menu.
   - A **Shuffle** button appears.
 - **When points are on:**
-  - Each row in the live buzz ranking gets quick buttons: `+p1 +p2 +p3` for the presets, a `−` toggle to flip them to deductions, and "…" for a custom amount and reason.
+  - Each row in the live buzz ranking gets one-tap buttons for each preset as both a deduction and an award (e.g. `−10 −5 −1 +1 +5 +10`). No custom amounts: hosts edit the presets instead.
   - A compact scoreboard (group totals) sits above the buzz list.
   - An **Undo last** button appears.
 
@@ -503,40 +503,40 @@ src/components/student/RevealPlayer.tsx # intro → group clip sequencing, fallb
 - [x] Types regenerated
 
 ### Step B: Gating plumbing
-- [ ] `features.ts`, `useRoomEntitlements`, `FeatureGate`, `UpgradePrompt`, env var
+- [x] `features.ts`, `useRoomEntitlements`, `FeatureGate`, `UpgradePrompt`, env var
 - **Done when:** the app is visually and behaviourally unchanged, and running the paywall SQL from section 3 locally makes the toggles show "Not enabled on this server" and the RPCs reject. Restore the rows afterwards.
 
 ### Step C: Groups
-- [ ] Room options panel (collapsed) with the Groups toggle and settings
-- [ ] Join flow for both modes, `get_join_info`, `choose_group`
-- [ ] Reveal animation (random mode)
-- [ ] Host roster grouping, Move, Shuffle
-- [ ] Display roster pills and winner group chip
-- [ ] Shipped presets + local "Save as my preset"
+- [x] Room options panel (collapsed) with the Groups toggle and settings
+- [x] Join flow for both modes, `get_join_info`, `choose_group`
+- [x] Reveal animation (random mode)
+- [x] Host roster grouping, Move, Shuffle
+- [x] Display roster pills and winner group chip
+- [x] Shipped presets + local "Save as my preset"
 - **Done when:** with 4 groups in random mode, 8 student browsers end up 2/2/2/2 and each sees a reveal. In choose mode, a student can't join without picking. Switching groups off hides all group UI, and switching back on restores the assignments.
 
 ### Step D: Points
-- [ ] Points toggle and presets
-- [ ] Quick-award on buzz rows, custom amount, deductions, Undo last, Reset
-- [ ] Scoreboard on host, display (`S`), and student footer
-- [ ] Display keys `A`, `D`, `Z`
+- [x] Points toggle and presets
+- [x] Quick-award and deduct on buzz rows, Undo last, Reset
+- [x] Scoreboard on host, display (`S`), and student footer
+- [x] Display keys `A`, `D`, `Z`
 - **Done when:** awarding +10 to a student updates their total *and* their group's total on all screens within about 1 second. Moving that student afterwards doesn't move the 10 points. Undo restores the previous totals.
 
 ### Step E: Polish
-- [ ] All new error codes mapped to copy
-- [ ] Reduced-motion support for the reveal and scoreboard animations
-- [ ] README: a "Groups & Points" section, plus a note on how hosted deployments can gate features
+- [x] All new error codes mapped to copy
+- [x] Reduced-motion support for the reveal and scoreboard animations
+- [x] README: a "Groups & Points" section, plus a note on how hosted deployments can gate features
 - [ ] Playwright: 1 host + 8 students covering random groups, a buzz, and an award, verified on the display
 
 ### Step F: Reveal media (section 6)
 - [x] Bucket (`buzzer-bucket`), storage policies, `media_assets`, column additions, RPCs (can ship in the same migration as Step A, or a follow-up migration if A has already been applied)
-- [ ] Media picker with upload, library, delete, and labels
-- [ ] Custom reveal sub-section (collapsed, inside Groups) with Intro + per-group pickers and Preview
-- [ ] `RevealPlayer` with intro → group clip sequencing and all fallbacks
-- [ ] Presets save and apply media IDs, skipping missing assets
+- [x] Media picker with upload, library, delete, and labels
+- [x] Custom reveal sub-section (collapsed, inside Groups) with per-group pickers and Preview (intro dropped, see section 6)
+- [x] `RevealPlayer` with the group clip as the sorting moment and all fallbacks
+- [x] Presets save and apply media IDs, skipping missing assets
 - [x] README host guide
 - **Done when:**
-  - In random mode with an intro + 4 group clips, 8 students each see the intro and then *their own* group's clip. The network panel shows each student downloaded only the intro and one group clip.
+  - In random mode with 4 group clips, 8 students each see *their own* group's clip. The network panel shows each student downloaded only one group clip.
   - With throttling ("Slow 3G"), students fall back to the text reveal within about 6 seconds and still reach the buzzer.
   - A file over the size limit or of the wrong type is rejected, both in the UI and by the bucket if the UI is bypassed.
   - With no media set, the built-in reveal is unchanged.

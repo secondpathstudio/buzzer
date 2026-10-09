@@ -47,6 +47,54 @@ update public.plans set max_participants = 100 where id = 'free';
 
 Existing rooms keep the cap they were created with.
 
+## Groups & Points
+
+Both are optional and off by default. Turn them on under **Room options** at the bottom of the host panel. Set up groups **before** showing the QR code.
+
+### Groups
+
+- **Random & even:** each student is sorted into a group as they join, keeping group sizes within one of each other. Their phone plays a short reveal ("Assigning your group…", then the group name), or your own clip (see [Custom reveal media](#custom-reveal-media)).
+- **Students choose:** students pick a group on the join screen.
+- **Called (one / many)** renames "Group / Groups" everywhere, e.g. "House / Houses" or "Table / Tables". You can also change the message shown while students are sorted.
+- Edit each group's name, colour and optional emoji; reorder or delete groups. You need 2–12 groups.
+- **Apply a preset** loads a built-in set (2 Teams, 4 Teams) or one of yours. **Save as my preset** stores the current setup, including any reveal clips, in this browser for your next room.
+- Once students have joined, the participant list is grouped by colour. Use **Move to…** on a student to change their group, or **🔀 Shuffle** to re-sort everyone at random. Deleting a group in random mode re-sorts its members into the others.
+- Students see their group chip and colour on the buzzer screen. The display shows group counts under the QR code and the winner's group next to their name.
+
+### Points
+
+- Set the **Quick-award amounts** (e.g. 1 / 5 / 10). Each buzz in the live ranking gets one-tap buttons for each amount, both as awards and deductions (−10 −5 −1 +1 +5 +10).
+- Points go to the student **and** to the group they're in at that moment. Moving a student later doesn't move their past points.
+- **↶ Undo last** removes the most recent award. **Reset points** (in Room options) sets every score in the room back to zero and can't be undone.
+- The host sees the full scoreboard. The display shows group totals and the top students (or the top 10 students when groups are off). Each student sees only their own total and their group's.
+
+### Display keys
+
+| Key | Action |
+|---|---|
+| `Space` / `→` / `PageDown` | Open, lock, then start the next round (works with a presentation clicker) |
+| `R` | Reset (new round) |
+| `L` | Lock the round |
+| `Q` | Show or hide the QR code |
+| `F` | Fullscreen |
+| `M` | Mute or unmute the buzz sound |
+| `S` | Toggle the scoreboard (points on) |
+| `A` / `D` | Award / deduct the first quick-award amount for this round's winner (points on) |
+| `Z` | Undo the last points (points on) |
+
+### Feature gating (for hosted deployments)
+
+Groups, points and custom reveal media are gated in the database, so a hosted service could charge for them. Self-hosted installs have everything enabled: the migration gives every plan every feature.
+
+To restrict them on the free plan:
+
+```sql
+delete from public.plan_features where plan_id = 'free'
+  and feature_key in ('groups', 'points', 'custom_media');
+```
+
+A row in `room_feature_grants` unlocks a feature for a single room, e.g. after a one-off purchase. The host panel shows locked features as unavailable. With `NEXT_PUBLIC_BILLING_ENABLED=true` it says they're on paid plans; there is no checkout yet.
+
 ## Custom reveal media
 
 With **Groups** on in random mode, each phone can play your own clip for the group it was sorted into (e.g. a character deliberating, then announcing "Red!"). The clip *is* the sorting moment: the phone shows "Assigning your group…" only while the clip loads, then plays it. Set it up under **Room options → Groups → Custom reveal (optional)**: choose or upload a clip for each group, and use **Preview reveal** to check it in a phone-sized frame. Any empty slot falls back to the built-in text reveal. **Save as my preset** remembers the chosen clips for your next room. In choose mode, the clip plays as a confirmation of the student's pick.
@@ -75,3 +123,7 @@ Files go into the `buzzer-bucket` storage bucket (created by the `groups_points`
 Upload third-party or franchise media only to your own instance. **Never commit it to the repo.**
 
 **Known limitations:** the media library belongs to the host's browser session (anonymous), so clearing browser data loses access to it. When the cleanup job deletes old anonymous hosts, their library entries go but the files stay in the bucket.
+
+## License
+
+[MIT](LICENSE)

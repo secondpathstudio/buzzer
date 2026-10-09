@@ -347,7 +347,7 @@ Buzzers exist, mostly for trivia and quiz bowl. This project's niche is lectures
 
 ## 14. Open questions
 
-- [ ] License: MIT (anything goes) or AGPL (hosted forks must share changes)
+- [x] License: MIT (anything goes) or AGPL (hosted forks must share changes) → **MIT**
 - [ ] Should the host be allowed to join their own room as a student? (Currently allowed, which is handy for testing.)
 - [ ] Room lifetime: 24h default; is that right for lectures?
 - [ ] Later: whether to offer a hosted version at all, the free cap (30 vs 50), prices, payment provider
