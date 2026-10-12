@@ -46,3 +46,6 @@ supabase/.temp
 supabase/.branches
 
 .env.local
+
+# load test sessions (anonymous test users)
+scripts/.load-test-users.json

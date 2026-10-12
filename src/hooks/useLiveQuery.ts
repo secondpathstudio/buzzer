@@ -90,6 +90,11 @@ export function useLiveQuery<T>({ key, table, filter, event = "*", fetch, onEven
           void refetch();
         },
       )
+      // Changes only flow once Realtime confirms the Postgres side, a beat
+      // after SUBSCRIBED, so refetch again then to cover the gap.
+      .on("system", {}, (payload) => {
+        if (payload.extension === "postgres_changes" && payload.status === "ok") void refetch();
+      })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") void refetch();
       });
