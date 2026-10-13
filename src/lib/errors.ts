@@ -31,7 +31,9 @@ export type BuzzerErrorCode =
   | "media_limit_reached"
   | "invalid_media"
   | "invalid_media_path"
-  | "media_not_uploaded";
+  | "media_not_uploaded"
+  // TV screens
+  | "invalid_pair_code";
 
 /** The room's group labels, for messages that mention them. */
 export type GroupLabels = { group_noun: string; group_noun_plural: string };
@@ -125,6 +127,8 @@ export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS)
     }
     case "invalid_media":
       return "That file isn't in your library.";
+    case "invalid_pair_code":
+      return "That code doesn't match a TV waiting to pair. Check the code on the TV (it changes every 15 minutes).";
     case "invalid_group_color":
     case "invalid_group_emoji":
     case "invalid_mode":

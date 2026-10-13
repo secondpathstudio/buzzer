@@ -461,6 +461,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -478,6 +480,8 @@ export type Database = {
           code: string
           created_at?: string
           current_round_id?: string | null
+          display_qr?: boolean
+          display_scores?: boolean
           expires_at?: string
           group_noun?: string
           group_noun_plural?: string
@@ -495,6 +499,8 @@ export type Database = {
           code?: string
           created_at?: string
           current_round_id?: string | null
+          display_qr?: boolean
+          display_scores?: boolean
           expires_at?: string
           group_noun?: string
           group_noun_plural?: string
@@ -570,6 +576,54 @@ export type Database = {
           },
         ]
       }
+      screens: {
+        Row: {
+          created_at: string
+          host_id: string | null
+          pair_code: string | null
+          pair_code_expires_at: string | null
+          paired_at: string | null
+          pinned_at: string | null
+          room_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          host_id?: string | null
+          pair_code?: string | null
+          pair_code_expires_at?: string | null
+          paired_at?: string | null
+          pinned_at?: string | null
+          room_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          host_id?: string | null
+          pair_code?: string | null
+          pair_code_expires_at?: string | null
+          paired_at?: string | null
+          pinned_at?: string | null
+          room_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screens_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "hosts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screens_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -631,6 +685,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -641,6 +697,7 @@ export type Database = {
           point_presets: number[]
           points_enabled: boolean
           reveal_intro_media_id: string | null
+          sorting_text: string | null
           title: string | null
         }
         SetofOptions: {
@@ -656,12 +713,14 @@ export type Database = {
       get_join_info: { Args: { p_code: string }; Returns: Json }
       get_room_entitlements: { Args: { p_room_id: string }; Returns: Json }
       get_scoreboard: { Args: { p_room_id: string }; Returns: Json }
+      get_screen_state: { Args: never; Returns: Json }
       host_has_feature: {
         Args: { p_feature: string; p_host_id: string }
         Returns: boolean
       }
       is_room_host: { Args: { p_room_id: string }; Returns: boolean }
       is_room_member: { Args: { p_room_id: string }; Returns: boolean }
+      is_room_screen: { Args: { p_room_id: string }; Returns: boolean }
       join_room: {
         Args: { p_code: string; p_display_name: string; p_group_id?: string }
         Returns: {
@@ -685,6 +744,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -695,6 +756,7 @@ export type Database = {
           point_presets: number[]
           points_enabled: boolean
           reveal_intro_media_id: string | null
+          sorting_text: string | null
           title: string | null
         }
         SetofOptions: {
@@ -753,6 +815,25 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "rounds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      pair_screen: {
+        Args: { p_code: string }
+        Returns: {
+          created_at: string
+          host_id: string | null
+          pair_code: string | null
+          pair_code_expires_at: string | null
+          paired_at: string | null
+          pinned_at: string | null
+          room_id: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "screens"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -835,6 +916,34 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_display_options: {
+        Args: { p_qr?: boolean; p_room_id: string; p_scores?: boolean }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_group_reveal_media: {
         Args: { p_group_id: string; p_media_id?: string }
         Returns: {
@@ -865,6 +974,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -875,6 +986,7 @@ export type Database = {
           point_presets: number[]
           points_enabled: boolean
           reveal_intro_media_id: string | null
+          sorting_text: string | null
           title: string | null
         }
         SetofOptions: {
@@ -890,6 +1002,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -900,18 +1014,9 @@ export type Database = {
           point_presets: number[]
           points_enabled: boolean
           reveal_intro_media_id: string | null
+          sorting_text: string | null
           title: string | null
         }
-        SetofOptions: {
-          from: "*"
-          to: "rooms"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      set_sorting_text: {
-        Args: { p_room_id: string; p_text?: string }
-        Returns: Database["public"]["Tables"]["rooms"]["Row"]
         SetofOptions: {
           from: "*"
           to: "rooms"
@@ -925,6 +1030,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -935,6 +1042,7 @@ export type Database = {
           point_presets: number[]
           points_enabled: boolean
           reveal_intro_media_id: string | null
+          sorting_text: string | null
           title: string | null
         }
         SetofOptions: {
@@ -944,9 +1052,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_sorting_text: {
+        Args: { p_room_id: string; p_text?: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      show_room_on_screens: { Args: { p_room_id: string }; Returns: undefined }
       shuffle_groups: { Args: { p_room_id: string }; Returns: undefined }
       smallest_group: { Args: { p_room_id: string }; Returns: string }
       undo_last_points: { Args: { p_room_id: string }; Returns: Json }
+      unpair_screen: { Args: { p_user_id: string }; Returns: undefined }
       void_point_event: {
         Args: { p_event_id: string }
         Returns: {

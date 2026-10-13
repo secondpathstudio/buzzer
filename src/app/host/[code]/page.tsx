@@ -24,6 +24,7 @@ import { ParticipantGroups } from "@/components/host/ParticipantGroups";
 import { PointsPanel } from "@/components/host/PointsPanel";
 import { RemoveButton } from "@/components/host/RemoveButton";
 import { RoomOptions } from "@/components/host/RoomOptions";
+import { TvScreens } from "@/components/host/TvScreens";
 import { buttonClass } from "@/components/ui";
 
 export default function HostPage({ params }: { params: Promise<{ code: string }> }) {
@@ -108,6 +109,8 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
               Open display mode ↗
             </Link>
           </div>
+
+          <TvScreens room={room} />
 
           <ParticipantList
             room={room}

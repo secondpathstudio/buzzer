@@ -122,7 +122,19 @@ Files go into the `buzzer-bucket` storage bucket (created by the `groups_points`
 
 Upload third-party or franchise media only to your own instance. **Never commit it to the repo.**
 
-**Known limitations:** the media library belongs to the host's browser session (anonymous), so clearing browser data loses access to it. When the cleanup job deletes old anonymous hosts, their library entries go but the files stay in the bucket.
+**Known limitations:** the media library belongs to the host's browser session (anonymous), so clearing browser data loses access to it. When the cleanup job deletes old anonymous hosts (no room in 30 days), their library entries go but the files stay in the bucket.
+
+## TV screen
+
+Show display mode on a second screen, such as a TV driven by a Raspberry Pi, while you run everything from your laptop.
+
+1. On the TV's computer, open `https://your-site/tv` in a normal (not private) browser window and bookmark it. It shows a 6-character pairing code.
+2. On your laptop, open any room's host panel, find **TV screen**, and enter the code. You only pair once.
+3. From then on, the TV shows your newest room automatically. **Show this room on TV** switches it to an older one.
+
+The TV is read-only: only `F` (fullscreen) and `M` (mute) work on it. Run rounds from the host panel, and use the **QR code on screen** and **Scoreboard on screen** switches there. These switches also control display mode in your own browser (`Q` / `S`).
+
+The pairing lives in the TV browser's storage, like a host's rooms. Clearing that browser's data unpairs it; pair again with a new code. **Disconnect** on the host panel unpairs it from your side. Sound needs one click or key press on the TV after the page loads (browsers block audio until then).
 
 ## License
 
