@@ -5,6 +5,7 @@ import type { Group } from "@/hooks/useGroups";
 import type { Tables } from "@/lib/database.types";
 import { GroupsSettings } from "./GroupsSettings";
 import { PointsSettings } from "./PointsSettings";
+import { RoomTemplates } from "./RoomTemplates";
 
 const OPEN_KEY = "buzzer:room-options-open";
 
@@ -42,6 +43,8 @@ export function RoomOptions({
         </span>
       </summary>
       <div className="flex flex-col gap-6 border-t border-neutral-200 p-6 dark:border-neutral-800">
+        {/* Loading a template replaces groups, like saving them does. */}
+        <RoomTemplates room={room} onApplied={onGroupsSaved} />
         <GroupsSettings room={room} groups={groups} onSaved={onGroupsSaved} />
         <PointsSettings room={room} />
       </div>
