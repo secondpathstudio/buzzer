@@ -121,6 +121,10 @@ check("undo shows it too", (await scoresOf()) === true);
 await rpc(host, "reset_round", { p_room_id: room1.id });
 await rpc(host, "reset_points", { p_room_id: room1.id });
 check("resetting points shows it too", (await scoresOf()) === true);
+await rpc(host, "reset_round", { p_room_id: room1.id });
+check("(open round hides it again)", (await scoresOf()) === false);
+await rpc(host, "reset_round", { p_room_id: room1.id, p_open: false });
+check("resetting to a waiting round shows it with no points scored", (await scoresOf()) === true);
 
 // Display background
 const BUCKET = "buzzer-bucket";
