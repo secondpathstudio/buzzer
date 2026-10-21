@@ -70,7 +70,7 @@ try {
   await rpc(host, "set_sorting_text", { p_room_id: A.id, p_text: "The hat is thinking…" });
   await rpc(host, "set_points_settings", { p_room_id: A.id, p_enabled: true, p_presets: [10, 50, -10] });
   await rpc(host, "set_room_intro_media", { p_room_id: A.id, p_media_id: intro.id });
-  await rpc(host, "set_display_options", { p_room_id: A.id, p_scores: true, p_qr: true });
+  await rpc(host, "set_display_options", { p_room_id: A.id, p_scores: true, p_qr: true, p_top_students: false });
   await rpc(host, "set_display_background", { p_room_id: A.id, p_media_id: intro.id });
   await rpc(host, "set_display_background_dim", { p_room_id: A.id, p_dim: 30 });
 
@@ -92,6 +92,7 @@ try {
   check("points copied", B.points_enabled === true && B.point_presets.join() === "10,50,-10", B.point_presets.join());
   check("intro media and display options copied",
     B.reveal_intro_media_id === intro.id && B.display_scores === true && B.display_qr === true);
+  check("top students setting copied", B.display_top_students === false);
   check("display background and dim copied",
     B.display_background_media_id === intro.id && B.display_background_dim === 30, B.display_background_dim);
 

@@ -500,6 +500,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -522,6 +523,7 @@ export type Database = {
           display_background_media_id?: string | null
           display_qr?: boolean
           display_scores?: boolean
+          display_top_students?: boolean
           expires_at?: string
           group_noun?: string
           group_noun_plural?: string
@@ -544,6 +546,7 @@ export type Database = {
           display_background_media_id?: string | null
           display_qr?: boolean
           display_scores?: boolean
+          display_top_students?: boolean
           expires_at?: string
           group_noun?: string
           group_noun_plural?: string
@@ -697,6 +700,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -728,6 +732,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -759,6 +764,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -840,6 +846,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -871,6 +878,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -938,6 +946,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1154,6 +1163,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1185,6 +1195,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1207,7 +1218,12 @@ export type Database = {
         }
       }
       set_display_options: {
-        Args: { p_qr?: boolean; p_room_id: string; p_scores?: boolean }
+        Args: {
+          p_qr?: boolean
+          p_room_id: string
+          p_scores?: boolean
+          p_top_students?: boolean
+        }
         Returns: {
           code: string
           created_at: string
@@ -1216,6 +1232,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1271,6 +1288,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1302,6 +1320,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1333,6 +1352,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1364,6 +1384,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string
@@ -1399,6 +1420,7 @@ export type Database = {
           display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
+          display_top_students: boolean
           expires_at: string
           group_noun: string
           group_noun_plural: string

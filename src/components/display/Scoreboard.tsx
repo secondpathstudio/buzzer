@@ -3,10 +3,18 @@ import type { IndividualScore, Scoreboard as Board } from "@/hooks/useScoreboard
 
 /**
  * Projector scoreboard: a bar per group in group colours (bars animate as
- * totals change) with the top 5 students below, or the top 10 students
- * when groups are off.
+ * totals change) with the top 3 students below, or the top 10 students
+ * when groups are off. `topStudents` hides the top 3 under the groups.
  */
-export function Scoreboard({ board, groupsOn }: { board: Board | undefined; groupsOn: boolean }) {
+export function Scoreboard({
+  board,
+  groupsOn,
+  topStudents,
+}: {
+  board: Board | undefined;
+  groupsOn: boolean;
+  topStudents: boolean;
+}) {
   if (!board) return null;
   const groups = groupsOn ? board.groups : [];
   const top = board.individuals.filter((p) => p.total !== 0);
@@ -43,7 +51,7 @@ export function Scoreboard({ board, groupsOn }: { board: Board | undefined; grou
           </div>
         ))}
       </div>
-      {top.length > 0 && <TopStudents students={top.slice(0, 5)} size="small" />}
+      {topStudents && top.length > 0 && <TopStudents students={top.slice(0, 3)} size="small" />}
     </div>
   );
 }

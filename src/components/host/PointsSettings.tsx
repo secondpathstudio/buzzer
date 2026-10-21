@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FeatureGate } from "@/components/FeatureGate";
 import { Toggle } from "@/components/ui";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useDisplayOptions } from "@/hooks/useDisplayOptions";
 import { formatDelta, usePointActions } from "@/hooks/usePointActions";
 import type { Tables } from "@/lib/database.types";
 import { errorMessage } from "@/lib/errors";
@@ -63,6 +64,7 @@ function PointsEditor({ room }: { room: Room }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
   const { reset, error: resetError } = usePointActions(room);
+  const options = useDisplayOptions(room.id);
 
   const values = draft ?? room.point_presets.map(String);
   const parsed = values.map((v) => Number(v));
@@ -142,6 +144,22 @@ function PointsEditor({ room }: { room: Room }) {
           </div>
         )}
       </div>
+      {/* With groups off, the top students are the whole scoreboard. */}
+      {room.groups_mode !== "off" && (
+        <label className="flex items-center justify-between gap-4">
+          <span>
+            <span className="block">Top students on the scoreboard</span>
+            <span className="block text-sm text-neutral-500">
+              The top 3 students under the {room.group_noun_plural.toLowerCase()} on the TV.
+            </span>
+          </span>
+          <Toggle
+            label="Top students on the scoreboard"
+            checked={room.display_top_students}
+            onChange={(topStudents) => void options.set({ topStudents })}
+          />
+        </label>
+      )}
       <div>
         <button
           onClick={() => void resetAll()}
@@ -150,9 +168,9 @@ function PointsEditor({ room }: { room: Room }) {
           Reset points
         </button>
       </div>
-      {(error || resetError) && (
+      {(error || resetError || options.error) && (
         <p role="alert" className="text-red-600 dark:text-red-400">
-          {error ?? resetError}
+          {error ?? resetError ?? options.error}
         </p>
       )}
     </div>

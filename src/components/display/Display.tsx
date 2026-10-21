@@ -214,7 +214,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
 
       <main className="flex min-h-0 flex-1 items-center justify-center px-[4vw]">
         {pointsOn && showScores ? (
-          <Scoreboard board={board} groupsOn={groupsOn} />
+          <Scoreboard board={board} groupsOn={groupsOn} topStudents={room.display_top_students} />
         ) : !round ? null : hasBuzzes ? (
           <Results buzzes={buzzes!} names={names} groupOf={groupOf} status={round.status} />
         ) : status === "open" ? (

@@ -104,6 +104,10 @@ const opts = await rpc(host, "set_display_options", { p_room_id: room1.id, p_sco
 check("host sets scoreboard on", opts.display_scores === true && opts.display_qr === false);
 const opts2 = await rpc(host, "set_display_options", { p_room_id: room1.id, p_qr: true });
 check("null leaves the other option alone", opts2.display_scores === true && opts2.display_qr === true);
+check("top students shown by default", opts2.display_top_students === true);
+const opts3 = await rpc(host, "set_display_options", { p_room_id: room1.id, p_top_students: false });
+check("host hides top students, others unchanged",
+  opts3.display_top_students === false && opts3.display_scores === true && opts3.display_qr === true);
 const scoresOf = async () =>
   (await host.from("rooms").select("display_scores").eq("id", room1.id).single()).data.display_scores;
 await rpc(host, "reset_round", { p_room_id: room1.id });
