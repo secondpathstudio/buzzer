@@ -60,13 +60,14 @@ export function isRateLimited(error: unknown): boolean {
   return e?.code === "over_request_rate_limit" || e?.status === 429;
 }
 
-// The request never reached Supabase. Browsers word this differently:
-// Chrome "Failed to fetch", Safari "Load failed", Firefox "NetworkError…".
+// The request never reached Supabase, or we gave up waiting (AbortError).
+// Browsers word this differently: Chrome "Failed to fetch", Safari "Load
+// failed", Firefox "NetworkError…".
 export function isNetworkError(error: unknown): boolean {
   const e = error as PgError;
   return (
     e?.name === "AuthRetryableFetchError" ||
-    /failed to fetch|load failed|networkerror|network request failed/i.test(e?.message ?? "")
+    /failed to fetch|load failed|networkerror|network request failed|aborterror/i.test(e?.message ?? "")
   );
 }
 

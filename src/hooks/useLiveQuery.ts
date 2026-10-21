@@ -24,6 +24,26 @@ type Options<T> = {
 
 type Result<T> = { key: string; data?: T; error?: unknown };
 
+// A fetch that hangs (e.g. on flaky wifi) would otherwise block every later
+// refetch; after this long, count it as failed and let the next one run.
+const FETCH_TIMEOUT_MS = 10_000;
+
+function withTimeout<T>(promise: PromiseLike<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("fetch_timeout")), FETCH_TIMEOUT_MS);
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 /**
  * Fetches data and refetches whenever Postgres Changes reports a change,
  * the channel (re)subscribes, the tab becomes visible, or the browser comes
@@ -58,7 +78,7 @@ export function useLiveQuery<T>({ key, table, filter, event = "*", fetch, onEven
         const forKey = keyRef.current;
         if (!forKey) break;
         try {
-          const data = await fetchRef.current();
+          const data = await withTimeout(fetchRef.current());
           setResult({ key: forKey, data });
         } catch (error) {
           // Keep the last good data; the next event or refetch retries.

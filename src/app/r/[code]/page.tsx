@@ -40,6 +40,11 @@ function toMedia(media: StoredMedia | null, info: JoinInfo): Media | null {
 }
 
 const NAME_KEY = "buzzer:name";
+// A join on flaky classroom wifi can hang with no error; give up and retry.
+const JOIN_TIMEOUT_MS = 8000;
+const JOIN_ATTEMPTS = 3;
+// Joined, but the room fetch after it failed: retry this often.
+const ROOM_RETRY_MS = 2000;
 // Which group's reveal this tab has shown, per room, so a refresh doesn't replay it.
 const revealKey = (roomId: string) => `buzzer:revealSeen:${roomId}`;
 
@@ -73,6 +78,15 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
     };
   }, [roomId, userId]);
 
+  // Just joined, but the room fetch after it failed or hung: keep trying,
+  // rather than drop the student back on the join form.
+  const awaitingRoom = !!me?.participant && !room;
+  useEffect(() => {
+    if (!awaitingRoom) return;
+    const interval = setInterval(() => void refetchRoom(), ROOM_RETRY_MS);
+    return () => clearInterval(interval);
+  }, [awaitingRoom, refetchRoom]);
+
   const onJoined = useCallback(
     (participant: Participant) => {
       setMe({ roomId: participant.room_id, participant });
@@ -88,17 +102,22 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
   const [seen, setSeen] = useState<Record<string, string>>({});
   const participant = room && me?.roomId === room.id ? me.participant : undefined;
   const groupId = participant?.group_id ?? undefined;
-  const revealGroup = reveal && groupId ? reveal.info.groups.find((g) => g.id === groupId) : undefined;
+
+  // The reveal goes by the join result rather than the room, so it doesn't
+  // wait on the room fetch that follows a join.
+  const revealMe = reveal && me?.roomId === reveal.info.room_id ? me.participant : undefined;
+  const revealGroupId = revealMe?.group_id ?? undefined;
+  const revealGroup = reveal && revealGroupId ? reveal.info.groups.find((g) => g.id === revealGroupId) : undefined;
 
   // Joined, but not into a group this reveal knows about (e.g. the host
   // edited groups meanwhile): drop it rather than get stuck. A stale one is
   // replaced below with fresh join info.
-  const activeReveal = reveal && (!participant || revealGroup) ? reveal : null;
+  const activeReveal = reveal && (!revealMe || revealGroup) ? reveal : null;
 
   function finishReveal() {
-    if (activeReveal && groupId) {
-      writeRevealSeen(activeReveal.info.room_id, groupId);
-      setSeen((s) => ({ ...s, [activeReveal.info.room_id]: groupId }));
+    if (activeReveal && revealGroupId) {
+      writeRevealSeen(activeReveal.info.room_id, revealGroupId);
+      setSeen((s) => ({ ...s, [activeReveal.info.room_id]: revealGroupId }));
     }
     setReveal(null);
   }
@@ -155,7 +174,7 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
     if (!session || loading) return <Message title="Connecting…" />;
     if (roomError && room === undefined) return <LoadError onRetry={() => void refetchRoom()} />;
 
-    if (room && participant === undefined) return <Message title="Connecting…" />;
+    if ((room && participant === undefined) || awaitingRoom) return <Message title="Connecting…" />;
 
     if (room && new Date(room.expires_at) < new Date()) {
       return <Message title="This room has expired">Ask your host for a new code.</Message>;
@@ -244,11 +263,7 @@ function JoinForm({
         onRevealStart({ info, sorting: false });
       }
     }
-    const { data, error } = await getSupabase().rpc("join_room", {
-      p_code: code,
-      p_display_name: name,
-      p_group_id: chosen?.id,
-    });
+    const { data, error } = await joinRoom(code, name, chosen?.id);
     if (error) {
       onRevealStart(null);
       setError(errorMessage(error, info));
@@ -632,6 +647,24 @@ function buttonState(round: Round | null | undefined, position: number | undefin
         sub: undefined,
         className: "bg-neutral-200 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
       } as const;
+  }
+}
+
+/**
+ * join_room, retried when the request hangs or never reaches the server.
+ * Safe to repeat: joining again keeps the group from the first join.
+ */
+async function joinRoom(code: string, name: string, groupId: string | undefined) {
+  for (let attempt = 1; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), JOIN_TIMEOUT_MS);
+    const result = await getSupabase()
+      .rpc("join_room", { p_code: code, p_display_name: name, p_group_id: groupId })
+      .abortSignal(controller.signal);
+    clearTimeout(timer);
+    // status 0: no response (network error or our timeout); 5xx: server hiccup.
+    const retryable = result.error && (result.status === 0 || result.status >= 500);
+    if (!retryable || attempt === JOIN_ATTEMPTS) return result;
   }
 }
 
