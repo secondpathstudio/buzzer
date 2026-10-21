@@ -25,14 +25,17 @@ const TOAST_MS = 2500;
 
 type Toast = { id: string; text: string; color: string | undefined };
 
-// A paired TV can run rounds (Space / L / R) and score the winner (A / D / Z), but nothing else.
+// A paired TV can run rounds (Space / L / R) and score buzz-ins (A or D, then 1–9 / Z), but nothing else.
 const SCREEN_KEYS = [" ", "ArrowRight", "PageDown", "r", "R", "l", "L", "f", "F", "m", "M"];
-const POINT_KEYS = ["a", "A", "d", "D", "+", "=", "-", "z", "Z"];
+const PLACE_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+const POINT_KEYS = [...PLACE_KEYS, "a", "A", "d", "D", "z", "Z", "Escape"];
+// How long A or D waits for a place number.
+const PENDING_MS = 4000;
 
 /**
  * Full-screen display mode. With `controls`, the keyboard and a clicker run
  * the room (host only). Without, it's a paired TV: the keyboard or a clicker
- * opens, locks and resets rounds and scores the winner, and the host panel
+ * opens, locks and resets rounds and scores buzz-ins, and the host panel
  * runs everything else.
  */
 export function Display({ room, controls }: { room: Tables<"rooms">; controls: boolean }) {
@@ -59,6 +62,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
   const background = useDisplayBackground(room);
   const [toast, setToast] = useState<Toast>();
   const [muted, setMuted] = useState(readMuted);
+  const [pendingSign, setPendingSign] = useState<1 | -1>();
   const beep = useBeep();
 
   const names = useMemo(
@@ -109,21 +113,34 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
     else void run("reset_round");
   }, [round, run]);
 
-  // A / D (or + / -): award or deduct the first preset for this round's winner.
-  const winnerId = buzzes?.[0]?.participant_id;
-  const awardWinner = useCallback(
-    (sign: 1 | -1) => {
-      if (!round || !winnerId) return;
-      void points.award(sign * room.point_presets[0], { participantId: winnerId }, { roundId: round.id });
+  // A or D, then 1–9: award or deduct the first preset for whoever buzzed in
+  // that place this round.
+  const awardPlace = useCallback(
+    (place: number, sign: 1 | -1) => {
+      const participantId = buzzes?.[place - 1]?.participant_id;
+      if (!round || !participantId) return;
+      void points.award(sign * room.point_presets[0], { participantId }, { roundId: round.id });
     },
-    [round, winnerId, points, room.point_presets],
+    [round, buzzes, points, room.point_presets],
   );
+
+  useEffect(() => {
+    if (!pendingSign) return;
+    const t = setTimeout(() => setPendingSign(undefined), PENDING_MS);
+    return () => clearTimeout(t);
+  }, [pendingSign]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       beep.unlock();
       if (!controls && !SCREEN_KEYS.includes(e.key) && !(pointsOn && POINT_KEYS.includes(e.key))) return;
+      if (PLACE_KEYS.includes(e.key)) {
+        if (pointsOn && pendingSign) awardPlace(Number(e.key), pendingSign);
+        setPendingSign(undefined);
+        return;
+      }
+      setPendingSign(undefined);
       switch (e.key) {
         case " ":
         case "ArrowRight":
@@ -153,14 +170,11 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           break;
         case "a":
         case "A":
-        case "+":
-        case "=":
-          if (pointsOn) awardWinner(1);
+          if (pointsOn) setPendingSign(1);
           break;
         case "d":
         case "D":
-        case "-":
-          if (pointsOn) awardWinner(-1);
+          if (pointsOn) setPendingSign(-1);
           break;
         case "z":
         case "Z":
@@ -179,7 +193,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [controls, advance, run, round?.status, beep, pointsOn, awardWinner, points, options, showQr, showScores]);
+  }, [controls, advance, run, round?.status, beep, pointsOn, pendingSign, awardPlace, points, options, showQr, showScores]);
 
   // A TV may never get a key press; a click unlocks sound too.
   useEffect(() => {
@@ -278,14 +292,19 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
       )}
 
       <footer className="flex items-center justify-between gap-6 px-[3vw] pb-[2vh] text-[1.8vh] text-white/40">
-        {controls ? (
+        {pendingSign ? (
+          <span className="text-white">
+            {pendingSign > 0 ? "Award" : "Deduct"} {room.point_presets[0]} — press <Key>1</Key>–<Key>9</Key> for
+            the buzz-in place · <Key>Esc</Key> cancel
+          </span>
+        ) : controls ? (
           <span>
             <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> lock ·{" "}
             <Key>Q</Key> QR · <Key>F</Key> fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
             {pointsOn && (
               <>
-                {" "}· <Key>S</Key> {showScores ? "buzzer" : "scores"} · <Key>A</Key>/<Key>D</Key> ±
-                {room.point_presets[0]} winner · <Key>Z</Key> undo
+                {" "}· <Key>S</Key> {showScores ? "buzzer" : "scores"} · <Key>A</Key>/<Key>D</Key> then{" "}
+                <Key>1</Key>–<Key>9</Key> ±{room.point_presets[0]} to that place · <Key>Z</Key> undo
               </>
             )}
           </span>
@@ -295,7 +314,8 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
             fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
             {pointsOn && (
               <>
-                {" "}· <Key>A</Key>/<Key>D</Key> ±{room.point_presets[0]} winner · <Key>Z</Key> undo
+                {" "}· <Key>A</Key>/<Key>D</Key> then <Key>1</Key>–<Key>9</Key> ±{room.point_presets[0]} to that place ·{" "}
+                <Key>Z</Key> undo
               </>
             )}
           </span>
