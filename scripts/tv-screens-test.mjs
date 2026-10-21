@@ -188,13 +188,25 @@ await rpc(student, "buzz", { p_round_id: reopened.id });
 const next = await rpc(host, "reset_round", { p_room_id: room1.id, p_open: false });
 check("rounds count up from 1 again", next.number === 2, next.number);
 
-// A paired screen runs rounds, but nothing else
+// A paired screen runs rounds and scores, but nothing else
 const tvOpened = await rpc(screen, "open_round", { p_room_id: room1.id });
 check("screen can open a round", tvOpened.status === "open", tvOpened.status);
 const tvLocked = await rpc(screen, "lock_round", { p_room_id: room1.id });
 check("screen can lock a round", tvLocked.status === "locked", tvLocked.status);
 const tvReset = await rpc(screen, "reset_round", { p_room_id: room1.id, p_open: false });
 check("screen can reset a round", tvReset.status === "waiting" && tvReset.number === 3, tvReset.number);
+const tvBoard = async () => (await rpc(screen, "get_scoreboard", { p_room_id: room1.id })).individuals[0].total;
+const before = await tvBoard();
+await rpc(screen, "award_points", { p_room_id: room1.id, p_participant_id: parts[0].id, p_delta: 1 });
+check("screen can award points", (await tvBoard()) === before + 1);
+await rpc(screen, "award_points", { p_room_id: room1.id, p_participant_id: parts[0].id, p_delta: -1 });
+check("screen can deduct points", (await tvBoard()) === before);
+await rpc(screen, "undo_last_points", { p_room_id: room1.id });
+check("screen can undo points", (await tvBoard()) === before + 1);
+const { error: e10 } = await screen.rpc("reset_points", { p_room_id: room1.id });
+check("screen can't reset points", !!e10, e10?.message);
+const { error: e11 } = await student.rpc("award_points", { p_room_id: room1.id, p_participant_id: parts[0].id, p_delta: 1 });
+check("student can't award points -> not_host", e11?.message === "not_host", e11?.message);
 const { error: e8 } = await screen.rpc("reset_room", { p_room_id: room1.id });
 check("screen can't reset the room", !!e8, e8?.message);
 const { error: e9 } = await student.rpc("open_round", { p_room_id: room1.id });

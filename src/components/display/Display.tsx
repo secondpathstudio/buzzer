@@ -25,13 +25,15 @@ const TOAST_MS = 2500;
 
 type Toast = { id: string; text: string; color: string | undefined };
 
-// A paired TV can run rounds (Space / L / R) but nothing else.
+// A paired TV can run rounds (Space / L / R) and score the winner (A / D / Z), but nothing else.
 const SCREEN_KEYS = [" ", "ArrowRight", "PageDown", "r", "R", "l", "L", "f", "F", "m", "M"];
+const POINT_KEYS = ["a", "A", "d", "D", "+", "=", "-", "z", "Z"];
 
 /**
  * Full-screen display mode. With `controls`, the keyboard and a clicker run
  * the room (host only). Without, it's a paired TV: the keyboard or a clicker
- * opens, locks and resets rounds, and the host panel runs everything else.
+ * opens, locks and resets rounds and scores the winner, and the host panel
+ * runs everything else.
  */
 export function Display({ room, controls }: { room: Tables<"rooms">; controls: boolean }) {
   const { data: round } = useCurrentRound(room.id);
@@ -107,7 +109,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
     else void run("reset_round");
   }, [round, run]);
 
-  // A / D: award or deduct the first preset for this round's winner.
+  // A / D (or + / -): award or deduct the first preset for this round's winner.
   const winnerId = buzzes?.[0]?.participant_id;
   const awardWinner = useCallback(
     (sign: 1 | -1) => {
@@ -121,7 +123,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
     function onKey(e: KeyboardEvent) {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       beep.unlock();
-      if (!controls && !SCREEN_KEYS.includes(e.key)) return;
+      if (!controls && !SCREEN_KEYS.includes(e.key) && !(pointsOn && POINT_KEYS.includes(e.key))) return;
       switch (e.key) {
         case " ":
         case "ArrowRight":
@@ -151,10 +153,13 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           break;
         case "a":
         case "A":
+        case "+":
+        case "=":
           if (pointsOn) awardWinner(1);
           break;
         case "d":
         case "D":
+        case "-":
           if (pointsOn) awardWinner(-1);
           break;
         case "z":
@@ -288,12 +293,19 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           <span>
             <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> lock · <Key>F</Key>{" "}
             fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
+            {pointsOn && (
+              <>
+                {" "}· <Key>A</Key>/<Key>D</Key> ±{room.point_presets[0]} winner · <Key>Z</Key> undo
+              </>
+            )}
           </span>
         )}
         {controls && (roundError ?? points.error ?? options.error) && (
           <span className="text-red-400">{roundError ?? points.error ?? options.error}</span>
         )}
-        {!controls && roundError && <span className="text-red-400">{roundError}</span>}
+        {!controls && (roundError ?? points.error) && (
+          <span className="text-red-400">{roundError ?? points.error}</span>
+        )}
       </footer>
     </div>
   );
