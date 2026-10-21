@@ -496,6 +496,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -516,6 +518,8 @@ export type Database = {
           code: string
           created_at?: string
           current_round_id?: string | null
+          display_background_dim?: number
+          display_background_media_id?: string | null
           display_qr?: boolean
           display_scores?: boolean
           expires_at?: string
@@ -536,6 +540,8 @@ export type Database = {
           code?: string
           created_at?: string
           current_round_id?: string | null
+          display_background_dim?: number
+          display_background_media_id?: string | null
           display_qr?: boolean
           display_scores?: boolean
           expires_at?: string
@@ -558,6 +564,13 @@ export type Database = {
             columns: ["current_round_id"]
             isOneToOne: false
             referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_display_background_media_id_fkey"
+            columns: ["display_background_media_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
             referencedColumns: ["id"]
           },
           {
@@ -680,6 +693,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -709,6 +724,39 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          template_id: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_room_template_settings_base: {
+        Args: { p_room_id: string; p_template_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -788,6 +836,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -817,6 +867,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -847,6 +899,7 @@ export type Database = {
       }
       effective_plan: { Args: { p_host_id: string }; Returns: string }
       generate_room_code: { Args: never; Returns: string }
+      get_display_background: { Args: { p_room_id: string }; Returns: Json }
       get_join_info: { Args: { p_code: string }; Returns: Json }
       get_room_entitlements: { Args: { p_room_id: string }; Returns: Json }
       get_scoreboard: { Args: { p_room_id: string }; Returns: Json }
@@ -881,6 +934,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -1089,12 +1144,76 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_display_background: {
+        Args: { p_media_id?: string; p_room_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          template_id: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_display_background_dim: {
+        Args: { p_dim: number; p_room_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          template_id: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_display_options: {
         Args: { p_qr?: boolean; p_room_id: string; p_scores?: boolean }
         Returns: {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -1148,6 +1267,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -1177,6 +1298,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -1206,6 +1329,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -1235,6 +1360,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string
@@ -1268,6 +1395,8 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          display_background_dim: number
+          display_background_media_id: string | null
           display_qr: boolean
           display_scores: boolean
           expires_at: string

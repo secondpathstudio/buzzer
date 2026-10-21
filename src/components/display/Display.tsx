@@ -7,6 +7,7 @@ import { useBuzzes } from "@/hooks/useBuzzes";
 import { GroupChip } from "@/components/GroupChip";
 import { Scoreboard } from "@/components/display/Scoreboard";
 import { useCurrentRound, type Round } from "@/hooks/useCurrentRound";
+import { useDisplayBackground } from "@/hooks/useDisplayBackground";
 import { useDisplayOptions } from "@/hooks/useDisplayOptions";
 import { type Group, useGroups } from "@/hooks/useGroups";
 import { useParticipants } from "@/hooks/useParticipants";
@@ -15,6 +16,7 @@ import { type PointEvent, useScoreboard } from "@/hooks/useScoreboard";
 import { useRoundActions } from "@/hooks/useRoundActions";
 import type { Tables } from "@/lib/database.types";
 import { readableText } from "@/lib/color";
+import type { Media } from "@/lib/media";
 import { formatGap, joinUrl } from "@/lib/format";
 import { useOnRoomChanged } from "@/lib/roomEvents";
 
@@ -49,6 +51,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
   const showScores = room.display_scores;
   const showQr = room.display_qr;
   const options = useDisplayOptions(room.id);
+  const background = useDisplayBackground(room);
   const [toast, setToast] = useState<Toast>();
   const [muted, setMuted] = useState(readMuted);
   const beep = useBeep();
@@ -190,13 +193,15 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
   const status = round?.status;
   const hasBuzzes = !!buzzes?.length;
   const url = joinUrl(room.code);
+  const pulsing = status === "open" && !hasBuzzes;
 
   return (
     <div
       className={`fixed inset-0 flex cursor-default select-none flex-col overflow-hidden text-white ${
-        status === "open" && !hasBuzzes ? "animate-open-pulse" : "bg-neutral-950"
+        pulsing && !background ? "animate-open-pulse" : "bg-neutral-950"
       }`}
     >
+      {background && <Background media={background} dim={room.display_background_dim} pulsing={pulsing} />}
       <ConnectionBanner />
       <header className="flex items-center justify-between px-[3vw] pt-[2vh] text-[2.2vh] text-white/60">
         <span className="truncate">{room.title ?? ""}</span>
@@ -282,6 +287,23 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
         )}
       </footer>
     </div>
+  );
+}
+
+/** Behind everything (the root is a stacking context): the file, a dimming layer, and the open tint. */
+function Background({ media, dim, pulsing }: { media: Media; dim: number; pulsing: boolean }) {
+  const layer = "pointer-events-none absolute inset-0 -z-10 h-full w-full";
+  return (
+    <>
+      {media.kind === "video" ? (
+        <video key={media.url} src={media.url} autoPlay muted loop playsInline className={`${layer} object-cover`} />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element -- user media from storage
+        <img src={media.url} alt="" className={`${layer} object-cover`} />
+      )}
+      <div className={`${layer} bg-black`} style={{ opacity: dim / 100 }} />
+      {pulsing && <div className={`${layer} animate-open-tint`} />}
+    </>
   );
 }
 

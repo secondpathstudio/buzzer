@@ -17,6 +17,12 @@
     0%, 100% { background-color: rgb(21 128 61); }
     50% { background-color: rgb(34 197 94); }
   }
+  /* Over a background image, so it shows through. */
+  --animate-open-tint: open-tint 1.6s ease-in-out infinite;
+  @keyframes open-tint {
+    0%, 100% { background-color: rgb(21 128 61 / 0.55); }
+    50% { background-color: rgb(34 197 94 / 0.8); }
+  }
   --animate-reveal-pop: reveal-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
   @keyframes reveal-pop {
     0% { transform: scale(0.4); opacity: 0; }

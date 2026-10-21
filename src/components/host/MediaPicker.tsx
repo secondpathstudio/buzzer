@@ -84,7 +84,7 @@ export function MediaPicker({
     const usedBy = usage.get(asset.id);
     const name = asset.label ?? "this file";
     const message = usedBy?.length
-      ? `Delete ${name}? Used by: ${usedBy.join(", ")}. Those will go back to the built-in reveal.`
+      ? `Delete ${name}? Used by: ${usedBy.join(", ")}. Those will go back to the default.`
       : `Delete ${name} from your library?`;
     if (!window.confirm(message)) return;
     setError(undefined);

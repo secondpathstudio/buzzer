@@ -1,7 +1,8 @@
 // Checks TV screen pairing (supabase/migrations/*_tv_screens.sql) against a
 // real Supabase project.
 // Usage: node --env-file=.env.local scripts/tv-screens-test.mjs
-// Creates 4 anonymous users and 3 rooms (which expire after 24h).
+// Creates 4 anonymous users and 3 rooms (which expire after 24h). The test
+// background image is removed at the end.
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -103,6 +104,45 @@ const opts = await rpc(host, "set_display_options", { p_room_id: room1.id, p_sco
 check("host sets scoreboard on", opts.display_scores === true && opts.display_qr === false);
 const opts2 = await rpc(host, "set_display_options", { p_room_id: room1.id, p_qr: true });
 check("null leaves the other option alone", opts2.display_scores === true && opts2.display_qr === true);
+
+// Display background
+const BUCKET = "buzzer-bucket";
+const hostId = (await host.auth.getUser()).data.user.id;
+const PNG = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="), (c) => c.charCodeAt(0));
+const bgId = crypto.randomUUID();
+const bgPath = `${hostId}/${bgId}.png`;
+const { error: upErr } = await host.storage.from(BUCKET).upload(bgPath, new Blob([PNG], { type: "image/png" }), { contentType: "image/png" });
+if (upErr) throw new Error(`upload: ${upErr.message}`);
+try {
+  await rpc(host, "register_media_asset", {
+    p_asset_id: bgId, p_storage_path: bgPath, p_kind: "image", p_mime_type: "image/png", p_bytes: PNG.length, p_label: "bg",
+  });
+  check("no background by default", (await rpc(screen, "get_display_background", { p_room_id: room1.id })) === null);
+  const withBg = await rpc(host, "set_display_background", { p_room_id: room1.id, p_media_id: bgId });
+  check("host sets a background", withBg.display_background_media_id === bgId);
+  const bg = await rpc(screen, "get_display_background", { p_room_id: room1.id });
+  check("screen reads the background", bg?.path === bgPath && bg?.kind === "image", JSON.stringify(bg));
+  const { error: e8 } = await student.rpc("get_display_background", { p_room_id: room1.id });
+  check("student can't read it -> not_host", e8?.message === "not_host", e8?.message);
+  const { error: e9 } = await screen.rpc("set_display_background", { p_room_id: room1.id });
+  check("screen can't change it -> not_host", e9?.message === "not_host", e9?.message);
+  const otherRoom = await rpc(otherHost, "create_room", { p_title: "TV test other" });
+  const { error: e10 } = await otherHost.rpc("set_display_background", { p_room_id: otherRoom.id, p_media_id: bgId });
+  check("can't use another host's media -> invalid_media", e10?.message === "invalid_media", e10?.message);
+  check("background dim defaults to 55", withBg.display_background_dim === 55, withBg.display_background_dim);
+  const dimmed = await rpc(host, "set_display_background_dim", { p_room_id: room1.id, p_dim: 80 });
+  check("host sets the dim", dimmed.display_background_dim === 80);
+  const { error: e11 } = await host.rpc("set_display_background_dim", { p_room_id: room1.id, p_dim: 95 });
+  check("dim over 90 rejected", e11?.message === "invalid_background_dim", e11?.message);
+  const { error: e12 } = await screen.rpc("set_display_background_dim", { p_room_id: room1.id, p_dim: 10 });
+  check("screen can't change the dim -> not_host", e12?.message === "not_host", e12?.message);
+  await rpc(host, "delete_media_asset", { p_asset_id: bgId });
+  const { data: cleared } = await host.from("rooms").select("display_background_media_id").eq("id", room1.id).single();
+  check("deleting the file clears the background", cleared.display_background_media_id === null);
+} finally {
+  await host.rpc("delete_media_asset", { p_asset_id: bgId });
+  await host.storage.from(BUCKET).remove([bgPath]);
+}
 
 // Which room the screen shows
 const room2 = await rpc(host, "create_room", { p_title: "TV test 2" });

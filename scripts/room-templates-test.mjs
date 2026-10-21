@@ -71,6 +71,8 @@ try {
   await rpc(host, "set_points_settings", { p_room_id: A.id, p_enabled: true, p_presets: [10, 50, -10] });
   await rpc(host, "set_room_intro_media", { p_room_id: A.id, p_media_id: intro.id });
   await rpc(host, "set_display_options", { p_room_id: A.id, p_scores: true, p_qr: true });
+  await rpc(host, "set_display_background", { p_room_id: A.id, p_media_id: intro.id });
+  await rpc(host, "set_display_background_dim", { p_room_id: A.id, p_dim: 30 });
 
   const t = await rpc(host, "save_room_template", { p_room_id: A.id, p_name: "  Hogwarts  " });
   check("save trims the name", t.name === "Hogwarts", t.name);
@@ -90,6 +92,8 @@ try {
   check("points copied", B.points_enabled === true && B.point_presets.join() === "10,50,-10", B.point_presets.join());
   check("intro media and display options copied",
     B.reveal_intro_media_id === intro.id && B.display_scores === true && B.display_qr === true);
+  check("display background and dim copied",
+    B.display_background_media_id === intro.id && B.display_background_dim === 30, B.display_background_dim);
 
   // ---------- 3. Saving under the same name replaces ----------
   await rpc(host, "set_points_settings", { p_room_id: A.id, p_enabled: false, p_presets: [1] });
@@ -117,6 +121,8 @@ try {
   });
   const auto = await configOf(host, t.id);
   check("points change auto-saves", auto.points_enabled === true && auto.point_presets.join() === "2,4", JSON.stringify(auto.point_presets));
+  await rpc(host, "set_display_background_dim", { p_room_id: C.id, p_dim: 70 });
+  check("dim change auto-saves", (await configOf(host, t.id)).display_background_dim === 70);
   check("groups change auto-saves", auto.groups.map((g) => g.name).join() === "Gryffindor,Hufflepuff,Slytherin");
   const unlinked = await rpc(host, "unlink_room_template", { p_room_id: C.id });
   await rpc(host, "set_points_settings", { p_room_id: C.id, p_enabled: false, p_presets: [7] });
@@ -144,11 +150,13 @@ try {
   // ---------- 6. A template with everything off ----------
   await rpc(host, "set_group_settings", { p_room_id: A.id, p_mode: "off" });
   await rpc(host, "set_room_intro_media", { p_room_id: A.id });
+  await rpc(host, "set_display_background", { p_room_id: A.id });
   await rpc(host, "set_display_options", { p_room_id: A.id, p_scores: false, p_qr: false });
   const plain = await rpc(host, "save_room_template", { p_room_id: A.id, p_name: "Plain" });
   const B2 = await rpc(host, "apply_room_template", { p_room_id: B.id, p_template_id: plain.id });
   check("plain template turns everything off",
-    B2.groups_mode === "off" && B2.points_enabled === false && B2.reveal_intro_media_id === null && B2.display_qr === false);
+    B2.groups_mode === "off" && B2.points_enabled === false && B2.reveal_intro_media_id === null && B2.display_qr === false &&
+    B2.display_background_media_id === null);
 
   // ---------- 7. Other hosts and students ----------
   const { data: seen } = await host2.from("room_templates").select("id");

@@ -31,6 +31,7 @@ export type BuzzerErrorCode =
   | "media_limit_reached"
   | "invalid_media"
   | "invalid_media_path"
+  | "invalid_background_dim"
   | "media_not_uploaded"
   // TV screens
   | "invalid_pair_code"
@@ -148,6 +149,7 @@ export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS)
     case "invalid_target":
     case "invalid_delta":
     case "invalid_media_path":
+    case "invalid_background_dim":
     case "media_not_uploaded":
       // Developer errors: the UI shouldn't be able to send these.
       console.error(error);

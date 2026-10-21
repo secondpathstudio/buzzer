@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Group } from "@/hooks/useGroups";
 import type { Tables } from "@/lib/database.types";
+import { DisplayBackgroundSettings } from "./DisplayBackgroundSettings";
 import { GroupsSettings } from "./GroupsSettings";
 import { PointsSettings } from "./PointsSettings";
 import { RoomTemplates } from "./RoomTemplates";
@@ -47,6 +48,7 @@ export function RoomOptions({
         <RoomTemplates room={room} onApplied={onGroupsSaved} />
         <GroupsSettings room={room} groups={groups} onSaved={onGroupsSaved} />
         <PointsSettings room={room} />
+        <DisplayBackgroundSettings room={room} />
       </div>
     </details>
   );
