@@ -113,6 +113,14 @@ await rpc(host, "reset_round", { p_room_id: room1.id, p_open: false });
 check("a waiting round leaves it showing", (await scoresOf()) === true);
 await rpc(host, "open_round", { p_room_id: room1.id });
 check("opening the round hides it", (await scoresOf()) === false);
+await rpc(host, "award_points", { p_room_id: room1.id, p_participant_id: parts[0].id, p_delta: 3 });
+check("awarding points shows the scoreboard", (await scoresOf()) === true);
+await rpc(host, "reset_round", { p_room_id: room1.id });
+await rpc(host, "undo_last_points", { p_room_id: room1.id });
+check("undo shows it too", (await scoresOf()) === true);
+await rpc(host, "reset_round", { p_room_id: room1.id });
+await rpc(host, "reset_points", { p_room_id: room1.id });
+check("resetting points shows it too", (await scoresOf()) === true);
 
 // Display background
 const BUCKET = "buzzer-bucket";
