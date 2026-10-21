@@ -53,16 +53,26 @@ function TopStudents({ students, size }: { students: IndividualScore[]; size: "s
     return <p className="text-center text-[4vh] text-white/50">No points yet</p>;
   }
   if (size === "small") {
+    // Labelled chips, so "1 Ruby 1" reads as rank, name, points, even over
+    // a background image.
     return (
-      <ol className="flex flex-wrap justify-center gap-x-[3vw] gap-y-[1vh] text-[3vh]">
-        {students.map((p, i) => (
-          <li key={p.participant_id} className="flex items-baseline gap-[0.6vw]">
-            <span className="font-mono text-white/50">{i + 1}</span>
-            <span className="font-semibold">{p.display_name}</span>
-            <span className="font-mono text-white/70 tabular-nums">{p.total}</span>
-          </li>
-        ))}
-      </ol>
+      <div className="flex flex-col items-center gap-[1.2vh]">
+        <h3 className="text-[2vh] font-bold uppercase tracking-[0.25em] text-white/70">Top students</h3>
+        <ol className="flex flex-wrap justify-center gap-x-[1.5vw] gap-y-[1vh] text-[3vh]">
+          {students.map((p, i) => (
+            <li
+              key={p.participant_id}
+              className="flex items-center gap-[0.8vw] rounded-full bg-black/60 py-[0.6vh] pr-[0.6vh] pl-[1.2vw] backdrop-blur-sm"
+            >
+              <span className="font-mono text-[2.4vh] font-bold text-white/70">#{i + 1}</span>
+              <span className="font-semibold">{p.display_name}</span>
+              <span className="rounded-full bg-white px-[0.8vw] font-mono text-[2.4vh] font-bold text-neutral-950 tabular-nums">
+                {points(p.total)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
     );
   }
   return (
@@ -76,4 +86,8 @@ function TopStudents({ students, size }: { students: IndividualScore[]; size: "s
       ))}
     </ol>
   );
+}
+
+function points(total: number): string {
+  return `${total} ${Math.abs(total) === 1 ? "pt" : "pts"}`;
 }
