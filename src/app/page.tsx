@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AccountPanel } from "@/components/AccountPanel";
 import { errorMessage } from "@/lib/errors";
 import { isProfane } from "@/lib/profanity";
 import type { Tables } from "@/lib/database.types";
@@ -18,13 +19,19 @@ export default function Home() {
   const [error, setError] = useState<string>();
   const [rooms, setRooms] = useState<Room[]>([]);
 
-  // Rooms this browser is already hosting, so the host can get back to them.
+  // Bumped when the host signs in or out, to reload their rooms.
+  const [account, setAccount] = useState(0);
+
+  // Rooms this host already has open, so they can get back to them.
   useEffect(() => {
     const supabase = getSupabase();
     (async () => {
       const { data } = await supabase.auth.getSession();
       const uid = data.session?.user.id;
-      if (!uid) return;
+      if (!uid) {
+        setRooms([]);
+        return;
+      }
       const { data: active } = await supabase
         .from("rooms")
         .select("id, code, title, expires_at")
@@ -33,7 +40,7 @@ export default function Home() {
         .order("created_at", { ascending: false });
       setRooms(active ?? []);
     })();
-  }, []);
+  }, [account]);
 
   async function createRoom(e: React.FormEvent) {
     e.preventDefault();
@@ -112,6 +119,8 @@ export default function Home() {
           </ul>
         </section>
       )}
+
+      <AccountPanel onChange={() => setAccount((n) => n + 1)} />
     </main>
   );
 }
