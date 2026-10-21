@@ -104,6 +104,15 @@ const opts = await rpc(host, "set_display_options", { p_room_id: room1.id, p_sco
 check("host sets scoreboard on", opts.display_scores === true && opts.display_qr === false);
 const opts2 = await rpc(host, "set_display_options", { p_room_id: room1.id, p_qr: true });
 check("null leaves the other option alone", opts2.display_scores === true && opts2.display_qr === true);
+const scoresOf = async () =>
+  (await host.from("rooms").select("display_scores").eq("id", room1.id).single()).data.display_scores;
+await rpc(host, "reset_round", { p_room_id: room1.id });
+check("a reset that opens a round hides the scoreboard", (await scoresOf()) === false);
+await rpc(host, "set_display_options", { p_room_id: room1.id, p_scores: true });
+await rpc(host, "reset_round", { p_room_id: room1.id, p_open: false });
+check("a waiting round leaves it showing", (await scoresOf()) === true);
+await rpc(host, "open_round", { p_room_id: room1.id });
+check("opening the round hides it", (await scoresOf()) === false);
 
 // Display background
 const BUCKET = "buzzer-bucket";
