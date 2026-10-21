@@ -73,5 +73,10 @@ export function accountErrorMessage(err: unknown): string {
       return "Enter a valid email address.";
   }
   if (e?.status === 429) return "Too many attempts. Wait a few minutes and try again.";
+  // Usually a project setting (SMTP, email templates); the details are in the console.
+  console.error(err);
+  if (e?.status === 500 && /sending/i.test(e.message ?? "")) {
+    return "The code email couldn't be sent. Check the email (SMTP) settings in Supabase.";
+  }
   return "Something went wrong. Please try again.";
 }
