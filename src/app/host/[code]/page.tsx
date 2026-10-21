@@ -188,7 +188,7 @@ function RoundControls({ roomId, round }: { roomId: string; round: Round | null 
           onClick={() => run("reset_round")}
           disabled={!round || !!pending}
           className={buttonClass(status === "locked" ? "primary" : "secondary")}
-          title="Start a new round with buzzers open"
+          title="Start a new round. Press Open when you're ready for buzzes."
         >
           Reset
         </button>

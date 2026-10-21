@@ -19,7 +19,11 @@ export function useRoundActions(roomId: string) {
       busy.current = true;
       setPending(action);
       setError(undefined);
-      const { error } = await getSupabase().rpc(action, { p_room_id: roomId });
+      // Reset starts a waiting round: buzzers open only when the host says so.
+      const { error } =
+        action === "reset_round"
+          ? await getSupabase().rpc(action, { p_room_id: roomId, p_open: false })
+          : await getSupabase().rpc(action, { p_room_id: roomId });
       // round_not_open / round_not_waiting just mean the state already moved
       // on (e.g. from the other screen); realtime will catch us up.
       const code = errorCode(error);
