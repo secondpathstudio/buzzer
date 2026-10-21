@@ -194,6 +194,9 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
   const hasBuzzes = !!buzzes?.length;
   const url = joinUrl(room.code);
   const pulsing = status === "open" && !hasBuzzes;
+  const scoresShown = pointsOn && showScores;
+  // The waiting screen has its own big QR, so the overlay only shows over everything else.
+  const waitingShown = !scoresShown && !!round && !hasBuzzes && status === "waiting";
 
   return (
     <div
@@ -213,7 +216,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
       </header>
 
       <main className="flex min-h-0 flex-1 items-center justify-center px-[4vw]">
-        {pointsOn && showScores ? (
+        {scoresShown ? (
           <Scoreboard board={board} groupsOn={groupsOn} topStudents={room.display_top_students} />
         ) : !round ? null : hasBuzzes ? (
           <Results buzzes={buzzes!} names={names} groupOf={groupOf} status={round.status} />
@@ -241,7 +244,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
         )}
       </main>
 
-      {showQr && status !== "waiting" && (
+      {showQr && !waitingShown && (
         <div className="absolute right-[2vw] bottom-[8vh] flex flex-col items-center rounded-[2vh] bg-white p-[2vh] text-neutral-950 shadow-2xl">
           <QRCodeSVG value={url} size={512} marginSize={0} className="h-[32vh] w-[32vh]" />
           <p className="mt-[1.5vh] font-mono text-[5vh] font-bold tracking-[0.2em]">{room.code}</p>
