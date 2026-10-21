@@ -509,6 +509,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         Insert: {
@@ -528,6 +529,7 @@ export type Database = {
           points_enabled?: boolean
           reveal_intro_media_id?: string | null
           sorting_text?: string | null
+          template_id?: string | null
           title?: string | null
         }
         Update: {
@@ -547,6 +549,7 @@ export type Database = {
           points_enabled?: boolean
           reveal_intro_media_id?: string | null
           sorting_text?: string | null
+          template_id?: string | null
           title?: string | null
         }
         Relationships: [
@@ -562,6 +565,13 @@ export type Database = {
             columns: ["reveal_intro_media_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "room_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -683,6 +693,36 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_room_template_settings: {
+        Args: { p_room_id: string; p_template_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -761,6 +801,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -789,6 +830,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -852,6 +894,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -1009,6 +1052,7 @@ export type Database = {
         Args: { p_feature: string; p_room_id: string }
         Returns: boolean
       }
+      room_template_config: { Args: { p_room_id: string }; Returns: Json }
       save_groups: {
         Args: { p_groups: Json; p_room_id: string }
         Returns: {
@@ -1064,6 +1108,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -1116,6 +1161,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -1144,6 +1190,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -1172,6 +1219,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -1200,6 +1248,7 @@ export type Database = {
           points_enabled: boolean
           reveal_intro_media_id: string | null
           sorting_text: string | null
+          template_id: string | null
           title: string | null
         }
         SetofOptions: {
@@ -1213,6 +1262,35 @@ export type Database = {
       shuffle_groups: { Args: { p_room_id: string }; Returns: undefined }
       smallest_group: { Args: { p_room_id: string }; Returns: string }
       undo_last_points: { Args: { p_room_id: string }; Returns: Json }
+      unlink_room_template: {
+        Args: { p_room_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          template_id: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       unpair_screen: { Args: { p_user_id: string }; Returns: undefined }
       void_point_event: {
         Args: { p_event_id: string }

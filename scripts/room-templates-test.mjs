@@ -43,6 +43,8 @@ async function asset(client) {
   });
 }
 
+const configOf = async (client, templateId) =>
+  (await client.from("room_templates").select("config").eq("id", templateId).single()).data.config;
 const groupsOf = async (client, roomId) =>
   (await client.from("groups").select("*").eq("room_id", roomId).order("sort_order")).data;
 
@@ -102,8 +104,30 @@ try {
   check("deleted clip skipped, rest still applied",
     gC.length === 3 && gC.every((g) => g.reveal_media_id === null) && C.reveal_intro_media_id === intro.id);
 
+  // ---------- 4b. Auto-save to the linked template ----------
+  check("a room created from a template is linked to it", C.template_id === t.id);
+  await rpc(host, "set_points_settings", { p_room_id: C.id, p_enabled: true, p_presets: [2, 4] });
+  await rpc(host, "save_groups", {
+    p_room_id: C.id,
+    p_groups: [
+      { name: "Gryffindor", color: "#E53935", emoji: "🦁" },
+      { name: "Hufflepuff", color: "#FDD835" },
+      { name: "Slytherin", color: "#43A047", emoji: "🐍" },
+    ],
+  });
+  const auto = await configOf(host, t.id);
+  check("points change auto-saves", auto.points_enabled === true && auto.point_presets.join() === "2,4", JSON.stringify(auto.point_presets));
+  check("groups change auto-saves", auto.groups.map((g) => g.name).join() === "Gryffindor,Hufflepuff,Slytherin");
+  const unlinked = await rpc(host, "unlink_room_template", { p_room_id: C.id });
+  await rpc(host, "set_points_settings", { p_room_id: C.id, p_enabled: false, p_presets: [7] });
+  const after = await configOf(host, t.id);
+  check("after unlinking, changes don't reach the template",
+    unlinked.template_id === null && after.point_presets.join() === "2,4");
+  const { error: unlinkErr } = await host2.rpc("unlink_room_template", { p_room_id: A.id });
+  check("can't unlink another host's room", unlinkErr?.message === "not_host", unlinkErr?.message);
+
   // ---------- 5. Apply to an existing room replaces groups ----------
-  // (Free plan: 3 active rooms per host, so C is reused.)
+  // (Free plan: 3 active rooms per host, so C is reused. It's unlinked now.)
   await rpc(host, "set_group_settings", { p_room_id: C.id, p_mode: "off" });
   await rpc(host, "save_groups", { p_room_id: C.id, p_groups: [{ name: "Red", color: "#E53935" }, { name: "Blue", color: "#1E88E5" }] });
   await rpc(host, "set_group_settings", { p_room_id: C.id, p_mode: "choose" });
@@ -112,7 +136,9 @@ try {
   const gC2 = await groupsOf(host, C.id);
   const { data: member } = await host.from("participants").select("group_id").eq("room_id", C.id).single();
   check("apply replaces groups and keeps the title",
-    gC2.map((g) => g.name).join() === "Gryffindor,Hufflepuff,Ravenclaw" && C2.title === "Templates test C" && C2.groups_mode === "random");
+    gC2.map((g) => g.name).join() === "Gryffindor,Hufflepuff,Slytherin" && C2.title === "Templates test C" && C2.groups_mode === "random");
+  check("loading links the room", C2.template_id === t.id);
+  check("loading doesn't change the template", (await configOf(host, t.id)).point_presets.join() === "2,4");
   check("existing student is reassigned in random mode", gC2.some((g) => g.id === member.group_id));
 
   // ---------- 6. A template with everything off ----------
@@ -145,6 +171,9 @@ try {
   check("rename onto an existing name rejected", dupErr?.message === "duplicate_template_name", dupErr?.message);
   const renamed = await rpc(host, "rename_room_template", { p_template_id: plain.id, p_name: "Plain room" });
   check("rename works", renamed.name === "Plain room");
+  await rpc(host, "delete_room_template", { p_template_id: plain.id });
+  const { data: bAfter } = await host.from("rooms").select("template_id").eq("id", B.id).single();
+  check("deleting a template unlinks its rooms", bAfter.template_id === null);
 } finally {
   const { data: templates } = await host.from("room_templates").select("id");
   for (const tmpl of templates ?? []) await host.rpc("delete_room_template", { p_template_id: tmpl.id });

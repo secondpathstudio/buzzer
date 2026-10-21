@@ -13,13 +13,16 @@ const smallButton =
 
 /**
  * Save this room's whole setup (groups, clips, points, display options)
- * as a named template on the server, or load one into this room.
+ * as a named template on the server, or load one into this room. Either
+ * links the room, and the server then auto-saves its changes to that
+ * template until the host stops it.
  */
 export function RoomTemplates({ room, onApplied }: { room: Room; onApplied: () => Promise<void> }) {
   const { templates, refetch } = useRoomTemplates();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState<string>();
+  const linked = templates?.find((t) => t.id === room.template_id);
 
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -75,8 +78,15 @@ export function RoomTemplates({ room, onApplied }: { room: Room; onApplied: () =
     });
   }
 
+  function unlink() {
+    void run(async () => {
+      const { error } = await getSupabase().rpc("unlink_room_template", { p_room_id: room.id });
+      if (error) throw error;
+    });
+  }
+
   function remove(templateId: string, name: string) {
-    if (!window.confirm(`Delete your template "${name}"? Rooms made from it aren't affected.`)) return;
+    if (!window.confirm(`Delete your template "${name}"? Rooms made from it keep their setup.`)) return;
     void run(async () => {
       const { error } = await getSupabase().rpc("delete_room_template", { p_template_id: templateId });
       if (error) throw error;
@@ -93,6 +103,17 @@ export function RoomTemplates({ room, onApplied }: { room: Room; onApplied: () =
           points, to reuse in later rooms.
         </p>
       </div>
+
+      {linked && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-900 dark:bg-green-400/10 dark:text-green-200">
+          <span>
+            Changes auto-save to <span className="font-semibold">“{linked.name}”</span>.
+          </span>
+          <button onClick={unlink} disabled={busy} className="font-medium underline underline-offset-2">
+            Stop auto-saving
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <button onClick={save} disabled={busy} className={smallButton}>
