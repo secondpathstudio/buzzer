@@ -34,14 +34,7 @@ export function usePointActions(room: Tables<"rooms">) {
     if (error) setError(errorMessage(error, room));
   }, [room]);
 
-  const reset = useCallback(async () => {
-    setError(undefined);
-    const { error } = await getSupabase().rpc("reset_points", { p_room_id: room.id });
-    if (error) setError(errorMessage(error, room));
-    return !error;
-  }, [room]);
-
-  return { award, undo, reset, error };
+  return { award, undo, error };
 }
 
 /** "+10" / "−5" */

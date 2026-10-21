@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { errorCode, errorMessage } from "@/lib/errors";
 import { getSupabase } from "@/lib/supabase/client";
 
-export type RoundAction = "open_round" | "lock_round" | "reset_round";
+export type RoundAction = "open_round" | "lock_round" | "reset_round" | "reset_room";
 
 /** Host round controls, shared by the host panel and display mode. */
 export function useRoundActions(roomId: string) {

@@ -5,7 +5,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { Toggle } from "@/components/ui";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useDisplayOptions } from "@/hooks/useDisplayOptions";
-import { formatDelta, usePointActions } from "@/hooks/usePointActions";
+import { formatDelta } from "@/hooks/usePointActions";
 import type { Tables } from "@/lib/database.types";
 import { errorMessage } from "@/lib/errors";
 import { FEATURES } from "@/lib/features";
@@ -63,7 +63,6 @@ function PointsEditor({ room }: { room: Room }) {
   const [draft, setDraft] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
-  const { reset, error: resetError } = usePointActions(room);
   const options = useDisplayOptions(room.id);
 
   const values = draft ?? room.point_presets.map(String);
@@ -81,11 +80,6 @@ function PointsEditor({ room }: { room: Room }) {
     setSaving(false);
     if (error) setError(errorMessage(error, room));
     else setDraft(null);
-  }
-
-  async function resetAll() {
-    if (!window.confirm("Reset every score in this room to zero? You can't undo this.")) return;
-    await reset();
   }
 
   return (
@@ -160,17 +154,9 @@ function PointsEditor({ room }: { room: Room }) {
           />
         </label>
       )}
-      <div>
-        <button
-          onClick={() => void resetAll()}
-          className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
-        >
-          Reset points
-        </button>
-      </div>
-      {(error || resetError || options.error) && (
+      {(error || options.error) && (
         <p role="alert" className="text-red-600 dark:text-red-400">
-          {error ?? resetError ?? options.error}
+          {error ?? options.error}
         </p>
       )}
     </div>

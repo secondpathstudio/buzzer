@@ -169,6 +169,27 @@ try {
   await host.storage.from(BUCKET).remove([bgPath]);
 }
 
+// Reset room: keeps students, zeroes points, back to a waiting Round 1
+await rpc(host, "award_points", { p_room_id: room1.id, p_participant_id: parts[0].id, p_delta: 4 });
+await rpc(host, "reset_round", { p_room_id: room1.id });
+const { error: e13 } = await otherHost.rpc("reset_room", { p_room_id: room1.id });
+check("other host can't reset the room -> not_host", e13?.message === "not_host", e13?.message);
+const fresh = await rpc(host, "reset_room", { p_room_id: room1.id });
+const { data: resetRoom } = await host.from("rooms").select("current_round_id, display_scores").eq("id", room1.id).single();
+const { count: roundCount } = await host.from("rounds").select("id", { count: "exact", head: true }).eq("room_id", room1.id);
+const { count: partCount } = await host.from("participants").select("id", { count: "exact", head: true }).eq("room_id", room1.id);
+const resetBoard = await rpc(host, "get_scoreboard", { p_room_id: room1.id });
+check("reset room starts a waiting Round 1 as the only round",
+  fresh.number === 1 && fresh.status === "waiting" && resetRoom.current_round_id === fresh.id && roundCount === 1,
+  `number=${fresh.number} rounds=${roundCount}`);
+check("reset room keeps students", partCount === 1, `participants=${partCount}`);
+check("reset room zeroes points", resetBoard.individuals.every((p) => p.total === 0), JSON.stringify(resetBoard.individuals));
+check("reset room shows the scoreboard", resetRoom.display_scores === true);
+const reopened = await rpc(host, "open_round", { p_room_id: room1.id });
+await rpc(student, "buzz", { p_round_id: reopened.id });
+const next = await rpc(host, "reset_round", { p_room_id: room1.id, p_open: false });
+check("rounds count up from 1 again", next.number === 2, next.number);
+
 // Which room the screen shows
 const room2 = await rpc(host, "create_room", { p_title: "TV test 2" });
 st = await rpc(screen, "get_screen_state");

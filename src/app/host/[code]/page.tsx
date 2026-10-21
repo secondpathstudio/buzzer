@@ -159,15 +159,30 @@ function HostPanel({ room }: { room: Tables<"rooms"> }) {
   );
 }
 
+const RESET_ROOM_CONFIRM =
+  "Reset the room? Every score goes back to 0 and rounds start again at Round 1. " +
+  "Students stay in the room. You can't undo this.";
+
 function RoundControls({ roomId, round }: { roomId: string; round: Round | null }) {
   const { run, pending, error } = useRoundActions(roomId);
   const status = round?.status;
 
   return (
     <div className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-800">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Round {round?.number ?? "–"}</h2>
-        {status && <StatusBadge status={status} />}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              if (window.confirm(RESET_ROOM_CONFIRM)) void run("reset_room");
+            }}
+            disabled={!round || !!pending}
+            className="text-sm text-neutral-500 underline disabled:opacity-40"
+          >
+            Reset room
+          </button>
+          {status && <StatusBadge status={status} />}
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <button

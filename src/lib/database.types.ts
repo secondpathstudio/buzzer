@@ -1094,6 +1094,24 @@ export type Database = {
         Returns: undefined
       }
       reset_points: { Args: { p_room_id: string }; Returns: number }
+      reset_room: {
+        Args: { p_room_id: string }
+        Returns: {
+          id: string
+          locked_at: string | null
+          number: number
+          opened_at: string | null
+          room_id: string
+          status: string
+          winner_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rounds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       reset_round: {
         Args: { p_open?: boolean; p_room_id: string }
         Returns: {
