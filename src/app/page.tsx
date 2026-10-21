@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AccountPanel } from "@/components/AccountPanel";
+import { type RoomTemplate, useRoomTemplates } from "@/hooks/useRoomTemplates";
 import { errorMessage } from "@/lib/errors";
 import { isProfane } from "@/lib/profanity";
 import type { Tables } from "@/lib/database.types";
@@ -18,6 +19,8 @@ export default function Home() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string>();
   const [rooms, setRooms] = useState<Room[]>([]);
+  const { templates, refetch: refetchTemplates } = useRoomTemplates();
+  const [templateId, setTemplateId] = useState("");
 
   // Bumped when the host signs in or out, to reload their rooms.
   const [account, setAccount] = useState(0);
@@ -42,6 +45,14 @@ export default function Home() {
     })();
   }, [account]);
 
+  function chooseTemplate(id: string) {
+    const previous = templates?.find((t) => t.id === templateId);
+    const next = templates?.find((t) => t.id === id);
+    setTemplateId(id);
+    // Fill in the template's room name unless the host typed their own.
+    if (!title.trim() || title === templateTitle(previous)) setTitle(templateTitle(next));
+  }
+
   async function createRoom(e: React.FormEvent) {
     e.preventDefault();
     if (isProfane(title)) {
@@ -54,6 +65,7 @@ export default function Home() {
       await ensureSession();
       const { data, error } = await getSupabase().rpc("create_room", {
         p_title: title.trim() || undefined,
+        p_template_id: templateId || undefined,
       });
       if (error) throw error;
       router.push(`/host/${data.code}`);
@@ -74,6 +86,26 @@ export default function Home() {
       </header>
 
       <form onSubmit={createRoom} className="flex flex-col gap-3">
+        {templates && templates.length > 0 && (
+          <>
+            <label htmlFor="template" className="text-sm font-medium text-neutral-500">
+              Start from
+            </label>
+            <select
+              id="template"
+              value={templateId}
+              onChange={(e) => chooseTemplate(e.target.value)}
+              className="mb-2 rounded-xl border border-neutral-300 bg-transparent px-4 py-3 text-lg outline-none focus:border-neutral-900 dark:border-neutral-700 dark:focus:border-neutral-100"
+            >
+              <option value="">Blank room</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
         <label htmlFor="title" className="text-sm font-medium text-neutral-500">
           Room name (optional)
         </label>
@@ -120,7 +152,18 @@ export default function Home() {
         </section>
       )}
 
-      <AccountPanel onChange={() => setAccount((n) => n + 1)} />
+      <AccountPanel
+        onChange={() => {
+          setAccount((n) => n + 1);
+          setTemplateId("");
+          void refetchTemplates();
+        }}
+      />
     </main>
   );
+}
+
+/** The room name saved with a template, or "" for none. */
+function templateTitle(template: RoomTemplate | undefined): string {
+  return (template?.config as { title?: string | null } | undefined)?.title ?? "";
 }
