@@ -93,9 +93,7 @@ const got = new Promise((resolve) => {
 check("screen gets realtime round changes", await got);
 await screen.removeAllChannels();
 
-// Screens are read-only
-const { error: e4 } = await screen.rpc("reset_round", { p_room_id: room1.id });
-check("screen can't control rounds -> not_host", e4?.message === "not_host", e4?.message);
+// Screens can run rounds (checked below) but can't change settings
 const { error: e5 } = await screen.rpc("set_display_options", { p_room_id: room1.id, p_scores: true });
 check("screen can't change display options -> not_host", e5?.message === "not_host", e5?.message);
 
@@ -189,6 +187,18 @@ const reopened = await rpc(host, "open_round", { p_room_id: room1.id });
 await rpc(student, "buzz", { p_round_id: reopened.id });
 const next = await rpc(host, "reset_round", { p_room_id: room1.id, p_open: false });
 check("rounds count up from 1 again", next.number === 2, next.number);
+
+// A paired screen runs rounds, but nothing else
+const tvOpened = await rpc(screen, "open_round", { p_room_id: room1.id });
+check("screen can open a round", tvOpened.status === "open", tvOpened.status);
+const tvLocked = await rpc(screen, "lock_round", { p_room_id: room1.id });
+check("screen can lock a round", tvLocked.status === "locked", tvLocked.status);
+const tvReset = await rpc(screen, "reset_round", { p_room_id: room1.id, p_open: false });
+check("screen can reset a round", tvReset.status === "waiting" && tvReset.number === 3, tvReset.number);
+const { error: e8 } = await screen.rpc("reset_room", { p_room_id: room1.id });
+check("screen can't reset the room", !!e8, e8?.message);
+const { error: e9 } = await student.rpc("open_round", { p_room_id: room1.id });
+check("student can't open a round -> not_host", e9?.message === "not_host", e9?.message);
 
 // Which room the screen shows
 const room2 = await rpc(host, "create_room", { p_title: "TV test 2" });

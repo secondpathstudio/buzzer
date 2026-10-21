@@ -25,7 +25,8 @@ const POLL_MS = 60_000;
 /**
  * A TV screen (e.g. a Raspberry Pi). Bookmark this page on it. Unpaired, it
  * shows a code to type into the host panel; paired, it shows the host's
- * current room in read-only display mode and follows them to new rooms.
+ * current room in display mode and follows them to new rooms. A keyboard or
+ * clicker on it opens, locks and resets rounds.
  */
 export default function TvPage() {
   const { session, error: sessionError } = useSession();

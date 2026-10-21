@@ -25,10 +25,13 @@ const TOAST_MS = 2500;
 
 type Toast = { id: string; text: string; color: string | undefined };
 
+// A paired TV can run rounds (Space / L / R) but nothing else.
+const SCREEN_KEYS = [" ", "ArrowRight", "PageDown", "r", "R", "l", "L", "f", "F", "m", "M"];
+
 /**
  * Full-screen display mode. With `controls`, the keyboard and a clicker run
- * the room (host only). Without, it's a read-only screen for a paired TV:
- * the host panel runs everything, and only F (fullscreen) and M (mute) work.
+ * the room (host only). Without, it's a paired TV: the keyboard or a clicker
+ * opens, locks and resets rounds, and the host panel runs everything else.
  */
 export function Display({ room, controls }: { room: Tables<"rooms">; controls: boolean }) {
   const { data: round } = useCurrentRound(room.id);
@@ -118,7 +121,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
     function onKey(e: KeyboardEvent) {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       beep.unlock();
-      if (!controls && !"fFmM".includes(e.key)) return;
+      if (!controls && !SCREEN_KEYS.includes(e.key)) return;
       switch (e.key) {
         case " ":
         case "ArrowRight":
@@ -283,12 +286,14 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           </span>
         ) : (
           <span>
-            <Key>F</Key> fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
+            <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> lock · <Key>F</Key>{" "}
+            fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
           </span>
         )}
         {controls && (roundError ?? points.error ?? options.error) && (
           <span className="text-red-400">{roundError ?? points.error ?? options.error}</span>
         )}
+        {!controls && roundError && <span className="text-red-400">{roundError}</span>}
       </footer>
     </div>
   );
