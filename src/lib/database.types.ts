@@ -456,6 +456,41 @@ export type Database = {
           },
         ]
       }
+      room_templates: {
+        Row: {
+          config: Json
+          created_at: string
+          host_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          config: Json
+          created_at?: string
+          host_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          host_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_templates_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "hosts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           code: string
@@ -629,6 +664,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_room_template: {
+        Args: { p_room_id: string; p_template_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assign_unassigned: { Args: { p_room_id: string }; Returns: undefined }
       award_points: {
         Args: {
@@ -679,7 +742,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_room: {
+      create_blank_room: {
         Args: { p_title?: string }
         Returns: {
           code: string
@@ -707,7 +770,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_room: {
+        Args: { p_template_id?: string; p_title?: string }
+        Returns: {
+          code: string
+          created_at: string
+          current_round_id: string | null
+          display_qr: boolean
+          display_scores: boolean
+          expires_at: string
+          group_noun: string
+          group_noun_plural: string
+          groups_mode: string
+          host_id: string
+          id: string
+          max_participants: number
+          point_presets: number[]
+          points_enabled: boolean
+          reveal_intro_media_id: string | null
+          sorting_text: string | null
+          title: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_media_asset: { Args: { p_asset_id: string }; Returns: string }
+      delete_room_template: {
+        Args: { p_template_id: string }
+        Returns: undefined
+      }
       effective_plan: { Args: { p_host_id: string }; Returns: string }
       generate_room_code: { Args: never; Returns: string }
       get_join_info: { Args: { p_code: string }; Returns: Json }
@@ -870,6 +965,23 @@ export type Database = {
         Args: { p_participant_id: string }
         Returns: undefined
       }
+      rename_room_template: {
+        Args: { p_name: string; p_template_id: string }
+        Returns: {
+          config: Json
+          created_at: string
+          host_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       require_room_feature: {
         Args: { p_feature: string; p_room_id: string }
         Returns: undefined
@@ -914,6 +1026,23 @@ export type Database = {
           to: "groups"
           isOneToOne: false
           isSetofReturn: true
+        }
+      }
+      save_room_template: {
+        Args: { p_name: string; p_room_id: string }
+        Returns: {
+          config: Json
+          created_at: string
+          host_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_templates"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       set_display_options: {

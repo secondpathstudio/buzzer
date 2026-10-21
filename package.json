@@ -15,7 +15,8 @@
     "test:smoke": "node --env-file=.env.local scripts/smoke-test.mjs",
     "test:groups": "node --env-file=.env.local scripts/groups-points-test.mjs",
     "test:load": "node --env-file=.env.local scripts/load-test.mjs",
-    "test:tv": "node --env-file=.env.local scripts/tv-screens-test.mjs"
+    "test:tv": "node --env-file=.env.local scripts/tv-screens-test.mjs",
+    "test:templates": "node --env-file=.env.local scripts/room-templates-test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

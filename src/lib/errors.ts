@@ -33,7 +33,12 @@ export type BuzzerErrorCode =
   | "invalid_media_path"
   | "media_not_uploaded"
   // TV screens
-  | "invalid_pair_code";
+  | "invalid_pair_code"
+  // Room templates
+  | "template_not_found"
+  | "invalid_template_name"
+  | "duplicate_template_name"
+  | "too_many_templates";
 
 /** The room's group labels, for messages that mention them. */
 export type GroupLabels = { group_noun: string; group_noun_plural: string };
@@ -129,6 +134,14 @@ export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS)
       return "That file isn't in your library.";
     case "invalid_pair_code":
       return "That code doesn't match a TV waiting to pair. Check the code on the TV (it changes every 15 minutes).";
+    case "template_not_found":
+      return "That template no longer exists.";
+    case "invalid_template_name":
+      return "Template names must be 1–60 characters.";
+    case "duplicate_template_name":
+      return "You already have a template with that name.";
+    case "too_many_templates":
+      return "You have the maximum number of templates (50). Delete one to save another.";
     case "invalid_group_color":
     case "invalid_group_emoji":
     case "invalid_mode":
