@@ -194,9 +194,10 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
   const hasBuzzes = !!buzzes?.length;
   const url = joinUrl(room.code);
   const pulsing = status === "open" && !hasBuzzes;
-  const scoresShown = pointsOn && showScores;
-  // The waiting screen has its own big QR, so the overlay only shows over everything else.
-  const waitingShown = !scoresShown && !!round && !hasBuzzes && status === "waiting";
+  const waiting = !!round && !hasBuzzes && status === "waiting";
+  // Q in a waiting round brings up the join screen over the scoreboard.
+  const waitingShown = waiting && (showQr || !(pointsOn && showScores));
+  const scoresShown = pointsOn && showScores && !waitingShown;
 
   return (
     <div
@@ -216,7 +217,17 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
       </header>
 
       <main className="flex min-h-0 flex-1 items-center justify-center px-[4vw]">
-        {scoresShown ? (
+        {waitingShown ? (
+          <Waiting
+            url={url}
+            code={room.code}
+            joined={participants?.length ?? 0}
+            groups={shownGroups?.map((g) => ({
+              group: g,
+              count: participants?.filter((p) => p.group_id === g.id).length ?? 0,
+            }))}
+          />
+        ) : scoresShown ? (
           <Scoreboard board={board} groupsOn={groupsOn} topStudents={room.display_top_students} />
         ) : !round ? null : hasBuzzes ? (
           <Results buzzes={buzzes!} names={names} groupOf={groupOf} status={round.status} />
@@ -231,17 +242,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
             <p className="text-[min(10vw,18vh)] font-black leading-none">Round closed</p>
             <p className="mt-[3vh] text-[4vh] text-white/60">No one buzzed</p>
           </div>
-        ) : (
-          <Waiting
-            url={url}
-            code={room.code}
-            joined={participants?.length ?? 0}
-            groups={shownGroups?.map((g) => ({
-              group: g,
-              count: participants?.filter((p) => p.group_id === g.id).length ?? 0,
-            }))}
-          />
-        )}
+        ) : null}
       </main>
 
       {showQr && !waitingShown && (
