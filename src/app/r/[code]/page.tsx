@@ -330,7 +330,7 @@ function JoinForm({
         )}
       </form>
       <p className="text-center text-sm text-neutral-500">
-        <Link href="/host" className="underline">
+        <Link href="/" className="underline">
           Hosting a class instead?
         </Link>
       </p>

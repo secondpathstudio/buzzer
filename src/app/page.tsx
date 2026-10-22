@@ -1,129 +1,169 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
-import { ContactForm } from "@/components/landing/ContactForm";
-import { buttonClass } from "@/components/ui";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AccountPanel } from "@/components/AccountPanel";
+import { type RoomTemplate, useRoomTemplates } from "@/hooks/useRoomTemplates";
+import { errorMessage } from "@/lib/errors";
+import { isProfane } from "@/lib/profanity";
+import type { Tables } from "@/lib/database.types";
+import { getSupabase } from "@/lib/supabase/client";
+import { ensureSession } from "@/lib/supabase/session";
 
-const REPO_URL = "https://github.com/secondpathstudio/buzzer";
+type Room = Pick<Tables<"rooms">, "id" | "code" | "title" | "expires_at">;
 
-export const metadata: Metadata = {
-  title: "BuzzFirst: a real-time buzzer for live classes",
-  description:
-    "Students scan a QR code and buzz in from their phones, no login needed. You see who was first. Free and open source.",
-};
+export default function Home() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string>();
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const { templates, refetch: refetchTemplates } = useRoomTemplates();
+  const [templateId, setTemplateId] = useState("");
 
-const steps = [
-  { title: "Open a room", body: "One click gives you a room with a QR code and a short join code." },
-  { title: "Students scan", body: "They join from any phone browser. No app, no account, no email." },
-  { title: "Buzz in", body: "Open a round and see everyone ranked by who buzzed first." },
-];
+  // Bumped when the host signs in or out, to reload their rooms.
+  const [account, setAccount] = useState(0);
 
-const features = [
-  { emoji: "⚡", title: "Real-time ranking", body: "Every buzz shows up instantly, in order, on your screen and the big screen." },
-  { emoji: "📱", title: "No login for students", body: "Scan and go. Works with a whole lecture hall on one campus wifi." },
-  { emoji: "🏆", title: "Groups & points", body: "Sort students into teams at random or let them choose, then award points per round." },
-  { emoji: "📺", title: "TV display", body: "Pair a classroom TV once and it shows your newest room automatically." },
-  { emoji: "🖱️", title: "Clicker friendly", body: "Open, lock and reset rounds from the keyboard or a presentation clicker." },
-  { emoji: "🔓", title: "Open source", body: "MIT licensed. Host your own copy for free on Supabase and Vercel." },
-];
+  // Rooms this host already has open, so they can get back to them.
+  useEffect(() => {
+    const supabase = getSupabase();
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user.id;
+      if (!uid) {
+        setRooms([]);
+        return;
+      }
+      const { data: active } = await supabase
+        .from("rooms")
+        .select("id, code, title, expires_at")
+        .eq("host_id", uid)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false });
+      setRooms(active ?? []);
+    })();
+  }, [account]);
 
-export default function Landing() {
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  function chooseTemplate(id: string) {
+    const previous = templates?.find((t) => t.id === templateId);
+    const next = templates?.find((t) => t.id === id);
+    setTemplateId(id);
+    // Fill in the template's room name unless the host typed their own.
+    if (!title.trim() || title === templateTitle(previous)) setTitle(templateTitle(next));
+  }
+
+  async function createRoom(e: React.FormEvent) {
+    e.preventDefault();
+    if (isProfane(title)) {
+      setError("That room name isn't allowed. Please choose a different one.");
+      return;
+    }
+    setCreating(true);
+    setError(undefined);
+    try {
+      await ensureSession();
+      const { data, error } = await getSupabase().rpc("create_room", {
+        p_title: title.trim() || undefined,
+        p_template_id: templateId || undefined,
+      });
+      if (error) throw error;
+      router.push(`/host/${data.code}`);
+    } catch (err) {
+      setError(errorMessage(err));
+      setCreating(false);
+    }
+  }
 
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5">
-        <span className="text-xl font-bold tracking-tight">BuzzFirst</span>
-        <nav className="flex items-center gap-5 text-sm font-medium">
-          <a href="#contact" className="text-neutral-500 hover:text-foreground">
-            Contact
-          </a>
-          <a href={REPO_URL} className="text-neutral-500 hover:text-foreground">
-            GitHub
-          </a>
-        </nav>
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-10 px-4 py-12">
+      <header className="text-center">
+        <h1 className="text-5xl font-bold tracking-tight">BuzzFirst</h1>
+        <p className="mt-3 text-lg text-neutral-500">
+          A real-time buzzer for live lectures. Students scan a QR code and
+          join, no login needed.
+        </p>
       </header>
 
-      <main className="flex flex-1 flex-col">
-        <section className="mx-auto flex w-full max-w-5xl flex-col items-center px-4 pt-16 pb-20 text-center sm:pt-24">
-          <div className="mb-8 flex size-24 items-center justify-center rounded-full bg-red-600 text-4xl shadow-lg animate-buzz-pulse">
-            <span aria-hidden="true">🔔</span>
-          </div>
-          <h1 className="max-w-3xl text-5xl font-bold tracking-tight sm:text-6xl">
-            Who buzzed first? Now you know.
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-neutral-500 sm:text-xl">
-            A real-time buzzer for live lectures and classrooms. Students scan a QR code and buzz in from their
-            phones, with no app and no login.
+      <form onSubmit={createRoom} className="flex flex-col gap-3">
+        {templates && templates.length > 0 && (
+          <>
+            <label htmlFor="template" className="text-sm font-medium text-neutral-500">
+              Start from
+            </label>
+            <select
+              id="template"
+              value={templateId}
+              onChange={(e) => chooseTemplate(e.target.value)}
+              className="mb-2 rounded-xl border border-neutral-300 bg-transparent px-4 py-3 text-lg outline-none focus:border-neutral-900 dark:border-neutral-700 dark:focus:border-neutral-100"
+            >
+              <option value="">Blank room</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+        <label htmlFor="title" className="text-sm font-medium text-neutral-500">
+          Room name (optional)
+        </label>
+        <input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={100}
+          placeholder="e.g. BIOL 201 — Week 4"
+          className="rounded-xl border border-neutral-300 bg-transparent px-4 py-3 text-lg outline-none focus:border-neutral-900 dark:border-neutral-700 dark:focus:border-neutral-100"
+        />
+        <button
+          type="submit"
+          disabled={creating}
+          className="mt-2 rounded-xl bg-neutral-900 px-6 py-5 text-xl font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+        >
+          {creating ? "Creating…" : "Create room"}
+        </button>
+        {error && (
+          <p role="alert" className="text-center text-red-600 dark:text-red-400">
+            {error}
           </p>
-          <div className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-            <Link href="/host" className={buttonClass("primary")}>
-              Start a room
-            </Link>
-            <a href={REPO_URL} className={buttonClass("secondary")}>
-              View on GitHub
-            </a>
-          </div>
-        </section>
+        )}
+      </form>
 
-        <section className="border-y border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/50">
-          <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-16 sm:grid-cols-3">
-            {steps.map((step, i) => (
-              <div key={step.title}>
-                <span className="font-mono text-sm text-neutral-500">0{i + 1}</span>
-                <h2 className="mt-1 text-xl font-semibold">{step.title}</h2>
-                <p className="mt-2 text-neutral-500">{step.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-5xl px-4 py-20">
-          <h2 className="text-center text-3xl font-bold tracking-tight">Built for the room you teach in</h2>
-          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <li key={f.title} className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-800">
-                <span aria-hidden="true" className="text-2xl">
-                  {f.emoji}
-                </span>
-                <h3 className="mt-3 text-lg font-semibold">{f.title}</h3>
-                <p className="mt-1 text-neutral-500">{f.body}</p>
+      {rooms.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-neutral-500">
+            Your active rooms
+          </h2>
+          <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+            {rooms.map((room) => (
+              <li key={room.id}>
+                <Link
+                  href={`/host/${room.code}`}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                >
+                  <span className="truncate">{room.title ?? "Untitled room"}</span>
+                  <span className="font-mono text-lg tracking-widest">{room.code}</span>
+                </Link>
               </li>
             ))}
           </ul>
         </section>
+      )}
 
-        <section id="contact" className="scroll-mt-8 border-t border-neutral-200 dark:border-neutral-800">
-          <div className="mx-auto w-full max-w-2xl px-4 py-20">
-            <h2 className="text-3xl font-bold tracking-tight">Get in touch</h2>
-            <p className="mt-3 text-neutral-500">
-              Questions about using BuzzFirst at your school, a hosted plan, or anything else? Send a note.
-              For bugs and feature requests, please{" "}
-              <a href={`${REPO_URL}/issues`} className="underline">
-                open a GitHub issue
-              </a>
-              .
-            </p>
-            <div className="mt-8">
-              {turnstileSiteKey ? (
-                <ContactForm siteKey={turnstileSiteKey} />
-              ) : (
-                <a href={`${REPO_URL}/issues`} className={buttonClass("secondary")}>
-                  Open a GitHub issue
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-neutral-200 dark:border-neutral-800">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-neutral-500 sm:flex-row sm:justify-between">
-          <span>© {new Date().getFullYear()} BuzzFirst · MIT licensed</span>
-          <a href={REPO_URL} className="hover:text-foreground">
-            Source on GitHub
-          </a>
-        </div>
-      </footer>
-    </div>
+      <AccountPanel
+        onChange={() => {
+          setAccount((n) => n + 1);
+          setTemplateId("");
+          void refetchTemplates();
+        }}
+      />
+    </main>
   );
+}
+
+/** The room name saved with a template, or "" for none. */
+function templateTitle(template: RoomTemplate | undefined): string {
+  return (template?.config as { title?: string | null } | undefined)?.title ?? "";
 }

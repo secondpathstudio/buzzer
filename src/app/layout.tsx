@@ -22,7 +22,6 @@ const notoEmoji = Noto_Color_Emoji({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "BuzzFirst",
   description: "A real-time buzzer for live lectures",
 };

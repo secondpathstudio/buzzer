@@ -45,7 +45,7 @@ export function HostGate({
           <Link href={`/r/${code}`} className={buttonClass("primary")}>
             Join as a student
           </Link>
-          <Link href="/host" className={buttonClass("secondary")}>
+          <Link href="/" className={buttonClass("secondary")}>
             Create a room
           </Link>
         </div>
@@ -58,7 +58,7 @@ export function HostGate({
       <Message title="This room has expired">
         Rooms last 24 hours.
         <div className="mt-6">
-          <Link href="/host" className={buttonClass("primary")}>
+          <Link href="/" className={buttonClass("primary")}>
             Create a new room
           </Link>
         </div>
