@@ -1,6 +1,6 @@
-# Buzzer
+# BuzzFirst
 
-An open-source, real-time buzzer for live lectures. The host shows a QR code, students scan it and join with no login, and the host sees who buzzed first.
+An open-source, real-time buzzer for live lectures, at [buzzfirst.app](https://buzzfirst.app). The host shows a QR code, students scan it and join with no login, and the host sees who buzzed first.
 
 Built with Next.js, Tailwind and Supabase (Postgres, Anonymous Sign-ins, Realtime). Free to self-host on Supabase Free + Vercel Hobby.
 
@@ -23,7 +23,7 @@ No Docker needed: development runs against a hosted Supabase project.
    ```
    Alternatively, paste each file in `supabase/migrations/` into the Supabase SQL Editor, in filename order.
 4. In the dashboard, under **Authentication → Sign In / Providers**, enable **Anonymous Sign-ins**.
-5. `npm run dev` and open http://localhost:3000.
+5. `npm run dev` and open http://localhost:3000 for the landing page, or http://localhost:3000/host to create a room.
 
 To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine's LAN address (e.g. `http://192.168.1.20:3000`) so the QR code points somewhere reachable. `next.config.ts` allows this machine's LAN addresses as dev origins automatically; Next.js blocks other non-localhost origins in development, and the page hangs.
 
@@ -33,11 +33,20 @@ To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine
 2. Apply the migrations (`npm run db:link && npm run db:push`, or paste each file in `supabase/migrations/` into the SQL Editor, in filename order).
 3. **Authentication → Sign In / Providers:** enable **Anonymous Sign-ins**.
 4. **Authentication → Rate Limits:** raise the anonymous sign-in limit. The default is 30 per hour *per IP*, and a lecture hall on campus wifi often shares one public IP. Set it to several hundred per hour before your first class.
-5. Deploy to Vercel Hobby with the variables from `.env.example`. Set `NEXT_PUBLIC_SITE_URL` to the deployed URL, and use the same URL as the **Site URL** in Supabase Auth settings.
+5. Deploy to Vercel Hobby with the variables from `.env.example`. Set `NEXT_PUBLIC_SITE_URL` to the deployed URL, and use the same URL as the **Site URL** in Supabase Auth settings. The Turnstile, Resend and `CONTACT_*` variables are optional; they only turn on the landing page's contact form (see below).
 6. Free-tier limits:
    - About 190 students per room (Supabase Free allows 200 realtime connections per project).
    - Free projects pause after 7 days of inactivity. Restore yours from the dashboard before class.
 7. Cleanup runs automatically: the second migration enables `pg_cron` and schedules two daily jobs (04:00 and 04:30 UTC). One deletes rooms 7 days after they expire. The other deletes anonymous users older than 30 days, since Supabase doesn't do this itself. Check runs with `select * from cron.job_run_details order by start_time desc limit 20;`.
+
+### Landing page contact form
+
+The landing page (`/`) has a contact form; the app itself starts at `/host`. The form only appears when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set (otherwise it links to GitHub issues). It needs:
+
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` from a Cloudflare Turnstile widget for your domain. For local dev, use Cloudflare's test keys `1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`.
+- `RESEND_API_KEY`, `CONTACT_TO_EMAIL` (where messages go), and `CONTACT_FROM_EMAIL` on a domain verified in Resend.
+
+Spam protection: the Turnstile token is verified server-side (single use, bound to the `contact` action), a hidden honeypot field silently drops bots, fields are length-checked and stripped of control characters, messages are sent as plain text with the sender as Reply-To, and each IP gets 3 messages per 10 minutes (per server instance, best-effort).
 
 ### Changing the participant cap
 
