@@ -32,7 +32,6 @@ export function TvScreens({ room }: { room: Tables<"rooms"> }) {
   const [pairing, setPairing] = useState(false);
   const [showPair, setShowPair] = useState(false);
   const [error, setError] = useState<string>();
-  const [shown, setShown] = useState(false);
 
   const paired = screens ?? [];
   const site = typeof window === "undefined" ? "" : window.location.host;
@@ -59,13 +58,6 @@ export function TvScreens({ room }: { room: Tables<"rooms"> }) {
     return !error;
   }
 
-  async function showHere() {
-    const ok = await run(() => getSupabase().rpc("show_room_on_screens", { p_room_id: room.id }));
-    if (!ok) return;
-    setShown(true);
-    setTimeout(() => setShown(false), 2000);
-  }
-
   async function disconnect(userId: string) {
     if (!window.confirm("Disconnect this TV? It will show a new pairing code.")) return;
     if (await run(() => getSupabase().rpc("unpair_screen", { p_user_id: userId }))) void refetch();
@@ -85,11 +77,8 @@ export function TvScreens({ room }: { room: Tables<"rooms"> }) {
       {paired.length > 0 && (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-neutral-500">
-            Your newest room appears on the TV automatically.
+            This room appears on the TV automatically, and so will the next one you start.
           </p>
-          <button onClick={() => void showHere()} className={buttonClass("secondary")}>
-            {shown ? "Showing on TV ✓" : "Show this room on TV"}
-          </button>
           <label className="flex items-center justify-between gap-4">
             <span>QR code on screen</span>
             <Toggle

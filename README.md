@@ -151,7 +151,7 @@ Show display mode on a second screen, such as a TV driven by a Raspberry Pi, whi
 
 1. On the TV's computer, open `https://your-site/tv` in a normal (not private) browser window and bookmark it. It shows a 6-character pairing code.
 2. On your laptop, open any room's host panel, find **TV screen**, and enter the code. You only pair once.
-3. From then on, the TV shows your newest room automatically. **Show this room on TV** switches it to an older one.
+3. From then on, the TV shows your current room automatically, and switches when you start a new one.
 
 The TV is read-only: only `F` (fullscreen) and `M` (mute) work on it. Run rounds from the host panel, and use the **QR code on screen** and **Scoreboard on screen** switches there. These switches also control display mode in your own browser (`Q` / `S`).
 
