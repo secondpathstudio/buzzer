@@ -55,8 +55,8 @@ export function HostGate({
 
   if (new Date(room.expires_at) < new Date()) {
     return (
-      <Message title="This room has expired">
-        Rooms last 24 hours.
+      <Message title="This room has ended">
+        Rooms end after 24 hours, or when the host starts a new one.
         <div className="mt-6">
           <Link href="/" className={buttonClass("primary")}>
             Create a new room

@@ -80,7 +80,7 @@ try {
     t.config.title === "Templates test A" && t.config.groups.map((g) => g.name).join() === "Gryffindor,Hufflepuff,Ravenclaw");
 
   // ---------- 2. Create a room from it ----------
-  const B = await rpc(host, "create_room", { p_title: "Templates test B", p_template_id: t.id });
+  const B = await rpc(host, "create_room", { p_title: "Templates test B", p_template_id: t.id, p_replace: true });
   const gB = await groupsOf(host, B.id);
   check("new room keeps its own title", B.title === "Templates test B");
   check("groups copied with order, colours, emoji",
@@ -104,7 +104,7 @@ try {
 
   // ---------- 4. Deleted media is skipped ----------
   await rpc(host, "delete_media_asset", { p_asset_id: clip.id });
-  const C = await rpc(host, "create_room", { p_title: "Templates test C", p_template_id: t.id });
+  const C = await rpc(host, "create_room", { p_title: "Templates test C", p_template_id: t.id, p_replace: true });
   const gC = await groupsOf(host, C.id);
   check("deleted clip skipped, rest still applied",
     gC.length === 3 && gC.every((g) => g.reveal_media_id === null) && C.reveal_intro_media_id === intro.id);

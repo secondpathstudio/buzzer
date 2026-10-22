@@ -120,7 +120,7 @@ The full SQL is in `supabase/migrations/20261005_buzzer_schema.sql`.
 | `round_not_open` | Show "Round closed". Usually a race; just refresh state. |
 | `not_host` | "Only the host can do that." |
 | `not_a_participant` | Send the student back to the join form |
-| `too_many_active_rooms` | "You already have the maximum number of active rooms." The landing page lists them (the limit comes from `plans`, so it isn't hard-coded). |
+| `too_many_active_rooms` | "You already have an active room…" Hosts get one active room (`plans.max_active_rooms`); creating a new one from `/` ends the current one (`create_room(p_replace => true)`). |
 | `invalid_name` | "Name must be 1–40 characters." |
 
 Generate types with `npm run db:types` (`supabase gen types typescript --linked`).

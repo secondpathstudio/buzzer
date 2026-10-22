@@ -47,6 +47,14 @@ update public.plans set max_participants = 100 where id = 'free';
 
 Existing rooms keep the cap they were created with.
 
+### Active rooms per host
+
+Each host has one active room. Starting a new room from the home page ends the current one, so back-to-back classes each get a fresh room. To allow more:
+
+```sql
+update public.plans set max_active_rooms = 3 where id = 'free';
+```
+
 ## Groups & Points
 
 Both are optional and off by default. Turn them on under **Room options** at the bottom of the host panel. Set up groups **before** showing the QR code.

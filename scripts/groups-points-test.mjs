@@ -49,7 +49,7 @@ async function sizes(host, roomId) {
 const spread = (list) => Math.max(...list) - Math.min(...list);
 
 async function room(host, title) {
-  return rpc(host, "create_room", { p_title: title });
+  return rpc(host, "create_room", { p_title: title, p_replace: true });
 }
 
 const host = await user();

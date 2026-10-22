@@ -149,7 +149,7 @@ try {
   check("student can't read it -> not_host", e8?.message === "not_host", e8?.message);
   const { error: e9 } = await screen.rpc("set_display_background", { p_room_id: room1.id });
   check("screen can't change it -> not_host", e9?.message === "not_host", e9?.message);
-  const otherRoom = await rpc(otherHost, "create_room", { p_title: "TV test other" });
+  const otherRoom = await rpc(otherHost, "create_room", { p_title: "TV test other", p_replace: true });
   const { error: e10 } = await otherHost.rpc("set_display_background", { p_room_id: otherRoom.id, p_media_id: bgId });
   check("can't use another host's media -> invalid_media", e10?.message === "invalid_media", e10?.message);
   check("background dim defaults to 55", withBg.display_background_dim === 55, withBg.display_background_dim);
@@ -213,13 +213,17 @@ const { error: e9 } = await student.rpc("open_round", { p_room_id: room1.id });
 check("student can't open a round -> not_host", e9?.message === "not_host", e9?.message);
 
 // Which room the screen shows
-const room2 = await rpc(host, "create_room", { p_title: "TV test 2" });
+const room2 = await rpc(host, "create_room", { p_title: "TV test 2", p_replace: true });
 st = await rpc(screen, "get_screen_state");
 check("a newer room takes over the screen", st.room_code === room2.code, st.room_code);
+const { data: ended } = await host.from("rooms").select("expires_at").eq("id", room1.id).single();
+check("starting a new room ends the old one", new Date(ended.expires_at) <= new Date(), ended.expires_at);
 await rpc(host, "show_room_on_screens", { p_room_id: room1.id });
 st = await rpc(screen, "get_screen_state");
-check("Show on TV pins an older room", st.room_code === room1.code, st.room_code);
-const room3 = await rpc(host, "create_room", { p_title: "TV test 3" });
+check("an ended room can't be pinned to the screen", st.room_code === room2.code, st.room_code);
+const { error: eLimit } = await host.rpc("create_room", { p_title: "TV test extra" });
+check("a second active room -> too_many_active_rooms", eLimit?.message === "too_many_active_rooms", eLimit?.message);
+const room3 = await rpc(host, "create_room", { p_title: "TV test 3", p_replace: true });
 st = await rpc(screen, "get_screen_state");
 check("creating a room after pinning shows the new one", st.room_code === room3.code, st.room_code);
 const { error: e6 } = await otherHost.rpc("show_room_on_screens", { p_room_id: room1.id });

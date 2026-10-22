@@ -177,7 +177,7 @@ export default function StudentPage({ params }: { params: Promise<{ code: string
     if ((room && participant === undefined) || awaitingRoom) return <Message title="Connecting…" />;
 
     if (room && new Date(room.expires_at) < new Date()) {
-      return <Message title="This room has expired">Ask your host for a new code.</Message>;
+      return <Message title="This room has ended">Ask your host for the new code.</Message>;
     }
 
     if (!room || !participant || editingName) {

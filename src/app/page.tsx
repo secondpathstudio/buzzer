@@ -59,6 +59,16 @@ export default function Home() {
       setError("That room name isn't allowed. Please choose a different one.");
       return;
     }
+    // A host gets one active room, so a new one ends the current one.
+    const current = rooms[0];
+    if (
+      current &&
+      !window.confirm(
+        `Start a new room? This ends "${current.title ?? "Untitled room"}" (${current.code}). Its students will need the new code.`,
+      )
+    ) {
+      return;
+    }
     setCreating(true);
     setError(undefined);
     try {
@@ -66,6 +76,7 @@ export default function Home() {
       const { data, error } = await getSupabase().rpc("create_room", {
         p_title: title.trim() || undefined,
         p_template_id: templateId || undefined,
+        p_replace: !!current,
       });
       if (error) throw error;
       router.push(`/host/${data.code}`);
@@ -134,7 +145,7 @@ export default function Home() {
       {rooms.length > 0 && (
         <section>
           <h2 className="mb-2 text-sm font-medium text-neutral-500">
-            Your active rooms
+            Your active room
           </h2>
           <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
             {rooms.map((room) => (

@@ -100,7 +100,7 @@ export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS)
     case "not_authenticated":
       return "Your session expired. Reload the page.";
     case "too_many_active_rooms":
-      return "You already have the maximum number of active rooms. Open one below, or wait for one to expire (rooms last 24 hours).";
+      return "You already have an active room, maybe in another browser. Reload this page to see it, then start a new one from here to end it.";
     case "invalid_name":
       return "Name must be 1–40 characters.";
     case "feature_not_available":

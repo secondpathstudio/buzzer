@@ -869,7 +869,7 @@ export type Database = {
         }
       }
       create_room: {
-        Args: { p_template_id?: string; p_title?: string }
+        Args: { p_replace?: boolean; p_template_id?: string; p_title?: string }
         Returns: {
           code: string
           created_at: string
