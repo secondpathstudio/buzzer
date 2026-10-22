@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountPanel } from "@/components/AccountPanel";
+import { Turnstile, type TurnstileHandle } from "@/components/Turnstile";
 import { type RoomTemplate, useRoomTemplates } from "@/hooks/useRoomTemplates";
 import { errorMessage } from "@/lib/errors";
 import { isProfane } from "@/lib/profanity";
+import { getRoomTicket } from "@/lib/roomTicket";
 import type { Tables } from "@/lib/database.types";
 import { getSupabase } from "@/lib/supabase/client";
 import { ensureSession } from "@/lib/supabase/session";
 
 type Room = Pick<Tables<"rooms">, "id" | "code" | "title" | "expires_at">;
+
+// Creating a room needs a captcha when this is set (joining never does).
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function Home() {
   const router = useRouter();
@@ -21,6 +26,8 @@ export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const { templates, refetch: refetchTemplates } = useRoomTemplates();
   const [templateId, setTemplateId] = useState("");
+  const turnstile = useRef<TurnstileHandle>(null);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   // Bumped when the host signs in or out, to reload their rooms.
   const [account, setAccount] = useState(0);
@@ -72,11 +79,19 @@ export default function Home() {
     setCreating(true);
     setError(undefined);
     try {
-      await ensureSession();
+      const session = await ensureSession();
+      let ticket: string | undefined;
+      if (TURNSTILE_SITE_KEY) {
+        const result = await getRoomTicket(session.user.id, captchaToken);
+        turnstile.current?.reset();
+        if ("error" in result) throw { message: result.error };
+        ticket = result.ticket;
+      }
       const { data, error } = await getSupabase().rpc("create_room", {
         p_title: title.trim() || undefined,
         p_template_id: templateId || undefined,
         p_replace: !!current,
+        p_ticket: ticket,
       });
       if (error) throw error;
       router.push(`/host/${data.code}`);
@@ -128,9 +143,12 @@ export default function Home() {
           placeholder="e.g. BIOL 201 — Week 4"
           className="rounded-xl border border-neutral-300 bg-transparent px-4 py-3 text-lg outline-none focus:border-neutral-900 dark:border-neutral-700 dark:focus:border-neutral-100"
         />
+        {TURNSTILE_SITE_KEY && (
+          <Turnstile ref={turnstile} siteKey={TURNSTILE_SITE_KEY} action="create_room" onToken={setCaptchaToken} />
+        )}
         <button
           type="submit"
-          disabled={creating}
+          disabled={creating || (!!TURNSTILE_SITE_KEY && !captchaToken)}
           className="mt-2 rounded-xl bg-neutral-900 px-6 py-5 text-xl font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
         >
           {creating ? "Creating…" : "Create room"}

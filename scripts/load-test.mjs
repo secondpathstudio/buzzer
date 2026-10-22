@@ -14,6 +14,7 @@
 // makes one new host and one room, which expires after 24h.
 import { readFileSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { roomTicket } from "./room-ticket.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -251,7 +252,7 @@ writeFileSync(
 );
 console.log(`Signed in ${N} students (${fresh} new, ${N - fresh} reused) in ${Math.round(now() - t)}ms\n`);
 
-const room = await rpc(host, "create_room", { p_title: `Load test ${N}` });
+const room = await rpc(host, "create_room", { p_ticket: await roomTicket(host), p_title: `Load test ${N}` });
 if (GROUPS) {
   const colors = ["#dc2626", "#2563eb", "#16a34a", "#ca8a04"];
   await rpc(host, "save_groups", {

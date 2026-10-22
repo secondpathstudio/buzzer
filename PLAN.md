@@ -214,7 +214,7 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 - **Done when:** the whole round cycle can be run from the keyboard alone, and the winner is readable at full screen from across a room.
 
 ### Phase 3: Hardening and first real class
-- [ ] Turnstile on anonymous sign-in
+- [x] Turnstile on room creation (not on sign-in, so students never see it): signed tickets checked by `create_room`
 - [x] Error states for every error code in section 5
 - [x] Reconnect and refetch on `visibilitychange`; offline banner
 - [x] Host can remove a participant

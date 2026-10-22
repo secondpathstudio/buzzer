@@ -35,7 +35,7 @@ To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine
 4. **Authentication → Rate Limits:** raise the anonymous sign-in limit. The default is 30 per hour *per IP*, and a lecture hall on campus wifi often shares one public IP. Set it to several hundred per hour before your first class.
 5. Deploy to Vercel Hobby with the variables from `.env.example`. Set `NEXT_PUBLIC_SITE_URL` to the deployed URL, and use the same URL as the **Site URL** in Supabase Auth settings.
 6. Free-tier limits:
-   - About 190 students per room (Supabase Free allows 200 realtime connections per project).
+   - Rooms hold 50 people by default (see [Changing the participant cap](#changing-the-participant-cap)). Supabase Free allows 200 realtime connections per project, shared by every room open at once.
    - Free projects pause after 7 days of inactivity. Restore yours from the dashboard before class.
 7. Cleanup runs automatically: the second migration enables `pg_cron` and schedules two daily jobs (04:00 and 04:30 UTC). One deletes rooms 7 days after they expire. The other deletes anonymous users older than 30 days, since Supabase doesn't do this itself. Check runs with `select * from cron.job_run_details order by start_time desc limit 20;`.
 
@@ -45,7 +45,20 @@ To test with phones on the same wifi, set `NEXT_PUBLIC_SITE_URL` to your machine
 update public.plans set max_participants = 100 where id = 'free';
 ```
 
-Existing rooms keep the cap they were created with.
+Existing rooms keep the cap they were created with. The default is 50.
+
+### Captcha on room creation
+
+Optional, and recommended for a public site. Creating a room then needs a [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) check; students joining a room never see one. Supabase's own captcha setting would cover students too (everyone signs in anonymously), so **leave it off** under Authentication → Attack Protection.
+
+1. Create a Turnstile widget for your domain. Set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`.
+2. Generate a random secret (`openssl rand -hex 32`). Set it as `ROOM_TICKET_SECRET` in your environment (and `.env.local`, for the test scripts), and store the same value in Supabase in the SQL Editor:
+   ```sql
+   select vault.create_secret('<the same value>', 'room_ticket_secret');
+   ```
+3. Redeploy.
+
+The app's server checks the Turnstile token and signs a ticket good for one room, for that user, for 5 minutes. `create_room` rejects rooms without a valid, unused ticket whenever the Vault secret exists. To rotate the secret, update both places (`select vault.update_secret(id, '<new>') from vault.secrets where name = 'room_ticket_secret';`). For local dev, use Cloudflare's test keys `1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`.
 
 ### Active rooms per host
 

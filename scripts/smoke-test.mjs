@@ -2,6 +2,7 @@
 // Usage: node --env-file=.env.local scripts/smoke-test.mjs
 // Creates 3 anonymous users and one room (which expires after 24h).
 import { createClient } from "@supabase/supabase-js";
+import { roomTicket } from "./room-ticket.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -21,7 +22,7 @@ function check(label, ok, detail = "") {
 
 const [host, alice, bob] = await Promise.all([user(), user(), user()]);
 
-const { data: room, error: e1 } = await host.rpc("create_room", { p_title: "Smoke test" });
+const { data: room, error: e1 } = await host.rpc("create_room", { p_ticket: await roomTicket(host), p_title: "Smoke test" });
 check("create_room", !e1 && room?.code?.length === 6, e1?.message ?? room?.code);
 
 const { error: e2 } = await alice.rpc("join_room", { p_code: room.code.toLowerCase(), p_display_name: " Alice " });

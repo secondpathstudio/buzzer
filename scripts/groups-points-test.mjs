@@ -8,6 +8,7 @@
 // they only run when SUPABASE_SERVICE_ROLE_KEY is set. Never run them
 // against a database real classes are using.
 import { createClient } from "@supabase/supabase-js";
+import { roomTicket } from "./room-ticket.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -49,7 +50,7 @@ async function sizes(host, roomId) {
 const spread = (list) => Math.max(...list) - Math.min(...list);
 
 async function room(host, title) {
-  return rpc(host, "create_room", { p_title: title, p_replace: true });
+  return rpc(host, "create_room", { p_ticket: await roomTicket(host), p_title: title, p_replace: true });
 }
 
 const host = await user();

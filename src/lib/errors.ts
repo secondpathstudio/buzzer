@@ -9,6 +9,8 @@ export type BuzzerErrorCode =
   | "not_a_participant"
   | "not_authenticated"
   | "too_many_active_rooms"
+  | "captcha_required"
+  | "captcha_unavailable"
   | "invalid_name"
   // Groups, points & reveal media (PLAN-groups-points.md §6, §8)
   | "feature_not_available"
@@ -101,6 +103,10 @@ export function errorMessage(err: unknown, labels: GroupLabels = DEFAULT_LABELS)
       return "Your session expired. Reload the page.";
     case "too_many_active_rooms":
       return "You already have an active room, maybe in another browser. Reload this page to see it, then start a new one from here to end it.";
+    case "captcha_required":
+      return "Couldn't verify you're human. Complete the check above and try again.";
+    case "captcha_unavailable":
+      return "Room creation isn't set up on this server yet (missing captcha keys).";
     case "invalid_name":
       return "Name must be 1–40 characters.";
     case "feature_not_available":

@@ -4,6 +4,7 @@
 // Creates 4 anonymous users and 3 rooms (which expire after 24h). The test
 // background image is removed at the end.
 import { createClient } from "@supabase/supabase-js";
+import { roomTicket } from "./room-ticket.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -36,9 +37,9 @@ check("unpaired screen gets a 6-char code", !s1.paired && /^[A-Z2-9]{6}$/.test(s
 const s2 = await rpc(screen, "get_screen_state");
 check("code is stable between calls", s2.pair_code === s1.pair_code);
 
-const room1 = await rpc(host, "create_room", { p_title: "TV test 1" });
+const room1 = await rpc(host, "create_room", { p_ticket: await roomTicket(host), p_title: "TV test 1" });
 await rpc(student, "join_room", { p_code: room1.code, p_display_name: "Student" });
-await rpc(otherHost, "create_room", { p_title: "Other host" });
+await rpc(otherHost, "create_room", { p_ticket: await roomTicket(otherHost), p_title: "Other host" });
 
 const { data: peek } = await screen.from("rooms").select("id").eq("id", room1.id);
 check("unpaired screen can't see the room", peek?.length === 0, `saw ${peek?.length}`);
@@ -149,7 +150,7 @@ try {
   check("student can't read it -> not_host", e8?.message === "not_host", e8?.message);
   const { error: e9 } = await screen.rpc("set_display_background", { p_room_id: room1.id });
   check("screen can't change it -> not_host", e9?.message === "not_host", e9?.message);
-  const otherRoom = await rpc(otherHost, "create_room", { p_title: "TV test other", p_replace: true });
+  const otherRoom = await rpc(otherHost, "create_room", { p_ticket: await roomTicket(otherHost), p_title: "TV test other", p_replace: true });
   const { error: e10 } = await otherHost.rpc("set_display_background", { p_room_id: otherRoom.id, p_media_id: bgId });
   check("can't use another host's media -> invalid_media", e10?.message === "invalid_media", e10?.message);
   check("background dim defaults to 55", withBg.display_background_dim === 55, withBg.display_background_dim);
@@ -213,7 +214,7 @@ const { error: e9 } = await student.rpc("open_round", { p_room_id: room1.id });
 check("student can't open a round -> not_host", e9?.message === "not_host", e9?.message);
 
 // Which room the screen shows
-const room2 = await rpc(host, "create_room", { p_title: "TV test 2", p_replace: true });
+const room2 = await rpc(host, "create_room", { p_ticket: await roomTicket(host), p_title: "TV test 2", p_replace: true });
 st = await rpc(screen, "get_screen_state");
 check("a newer room takes over the screen", st.room_code === room2.code, st.room_code);
 const { data: ended } = await host.from("rooms").select("expires_at").eq("id", room1.id).single();
@@ -221,9 +222,9 @@ check("starting a new room ends the old one", new Date(ended.expires_at) <= new 
 await rpc(host, "show_room_on_screens", { p_room_id: room1.id });
 st = await rpc(screen, "get_screen_state");
 check("an ended room can't be pinned to the screen", st.room_code === room2.code, st.room_code);
-const { error: eLimit } = await host.rpc("create_room", { p_title: "TV test extra" });
+const { error: eLimit } = await host.rpc("create_room", { p_ticket: await roomTicket(host), p_title: "TV test extra" });
 check("a second active room -> too_many_active_rooms", eLimit?.message === "too_many_active_rooms", eLimit?.message);
-const room3 = await rpc(host, "create_room", { p_title: "TV test 3", p_replace: true });
+const room3 = await rpc(host, "create_room", { p_ticket: await roomTicket(host), p_title: "TV test 3", p_replace: true });
 st = await rpc(screen, "get_screen_state");
 check("creating a room after pinning shows the new one", st.room_code === room3.code, st.room_code);
 const { error: e6 } = await otherHost.rpc("show_room_on_screens", { p_room_id: room1.id });
