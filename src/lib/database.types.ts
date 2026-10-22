@@ -685,6 +685,21 @@ export type Database = {
           },
         ]
       }
+      used_room_tickets: {
+        Row: {
+          nonce: string
+          used_at: string
+        }
+        Insert: {
+          nonce: string
+          used_at?: string
+        }
+        Update: {
+          nonce?: string
+          used_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

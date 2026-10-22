@@ -248,6 +248,10 @@ const register = (client, { id, path }, bytes = PNG.length) =>
   });
 
 try {
+  // A fresh room: starting later rooms ended A, and join info needs a live one.
+  const M = await room(host, "GP test media");
+  const groupsM = await rpc(host, "save_groups", { p_room_id: M.id, p_groups: groupList(2) });
+  await rpc(host, "set_group_settings", { p_room_id: M.id, p_mode: "random" });
   const { error: foreignUpload } = await host.storage
     .from(BUCKET)
     .upload(`${host2.uid}/${crypto.randomUUID()}.png`, new Blob([PNG], { type: "image/png" }), { contentType: "image/png" });
@@ -266,19 +270,19 @@ try {
 
   const f2 = await upload(host2);
   const { data: asset2 } = await register(host2, f2);
-  const { error: foreignAttach } = await host.rpc("set_group_reveal_media", { p_group_id: groupsA[0].id, p_media_id: asset2.id });
+  const { error: foreignAttach } = await host.rpc("set_group_reveal_media", { p_group_id: groupsM[0].id, p_media_id: asset2.id });
   check("attach another host's asset -> invalid_media", foreignAttach?.message === "invalid_media", foreignAttach?.message);
   const { error: foreignSave } = await host.rpc("save_groups", {
-    p_room_id: A.id,
-    p_groups: groupsA.map((g, i) => ({ id: g.id, name: g.name, color: g.color, ...(i === 0 ? { reveal_media_id: asset2.id } : {}) })),
+    p_room_id: M.id,
+    p_groups: groupsM.map((g, i) => ({ id: g.id, name: g.name, color: g.color, ...(i === 0 ? { reveal_media_id: asset2.id } : {}) })),
   });
   check("save_groups with another host's asset -> invalid_media", foreignSave?.message === "invalid_media", foreignSave?.message);
 
-  await rpc(host, "set_group_reveal_media", { p_group_id: groupsA[0].id, p_media_id: asset1.id });
-  await rpc(host, "set_room_intro_media", { p_room_id: A.id, p_media_id: asset1.id });
-  const mediaInfo = await rpc(outsider, "get_join_info", { p_code: A.code });
+  await rpc(host, "set_group_reveal_media", { p_group_id: groupsM[0].id, p_media_id: asset1.id });
+  await rpc(host, "set_room_intro_media", { p_room_id: M.id, p_media_id: asset1.id });
+  const mediaInfo = await rpc(outsider, "get_join_info", { p_code: M.code });
   check("join info includes intro + group media",
-    mediaInfo.intro_media?.path === f1.path && mediaInfo.groups.find((g) => g.id === groupsA[0].id)?.reveal_media?.kind === "image");
+    mediaInfo.intro_media?.path === f1.path && mediaInfo.groups.find((g) => g.id === groupsM[0].id)?.reveal_media?.kind === "image");
 
   // Library limit: fill to max_media_assets (20 by default), then one more.
   const { data: plan } = await host.from("plans").select("max_media_assets").eq("id", "free").single();
@@ -290,8 +294,8 @@ try {
   check(`registration #${plan.max_media_assets + 1} -> media_limit_reached`, full?.message === "media_limit_reached", full?.message);
 
   const deletedPath = await rpc(host, "delete_media_asset", { p_asset_id: asset1.id });
-  const { data: gAfter } = await host.from("groups").select("reveal_media_id").eq("id", groupsA[0].id).single();
-  const { data: rAfter } = await host.from("rooms").select("reveal_intro_media_id").eq("id", A.id).single();
+  const { data: gAfter } = await host.from("groups").select("reveal_media_id").eq("id", groupsM[0].id).single();
+  const { data: rAfter } = await host.from("rooms").select("reveal_intro_media_id").eq("id", M.id).single();
   check("deleting an asset nulls its references", deletedPath === f1.path && gAfter.reveal_media_id === null && rAfter.reveal_intro_media_id === null);
   const { error: notMine } = await host.rpc("delete_media_asset", { p_asset_id: asset2.id });
   check("can't delete another host's asset", notMine?.message === "invalid_media", notMine?.message);
