@@ -132,13 +132,13 @@ function RevealMediaEditor({
       <button
         onClick={() => setPreviewing(true)}
         disabled={groups.length === 0}
-        className="self-start rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
+        className="self-start rounded-lg bg-wine-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-wine-400 dark:text-white"
       >
         ▶ Preview reveal
       </button>
 
       {error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}

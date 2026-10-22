@@ -11,7 +11,7 @@ export function buttonClass(variant: "primary" | "secondary" | "go") {
   const base =
     "inline-flex items-center justify-center rounded-xl px-5 py-4 text-lg font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40";
   return {
-    primary: `${base} bg-neutral-900 text-white dark:bg-white dark:text-neutral-900`,
+    primary: `${base} bg-wine-500 text-white dark:bg-wine-400 dark:text-white`,
     secondary: `${base} border border-neutral-300 text-neutral-900 dark:border-neutral-700 dark:text-neutral-100`,
     go: `${base} bg-green-600 text-white`,
   }[variant];

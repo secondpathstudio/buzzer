@@ -149,12 +149,12 @@ export default function Home() {
         <button
           type="submit"
           disabled={creating || (!!TURNSTILE_SITE_KEY && !captchaToken)}
-          className="mt-2 rounded-xl bg-neutral-900 px-6 py-5 text-xl font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+          className="mt-2 rounded-xl bg-wine-500 px-6 py-5 text-xl font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-wine-400 dark:text-white"
         >
           {creating ? "Creating…" : "Create room"}
         </button>
         {error && (
-          <p role="alert" className="text-center text-red-600 dark:text-red-400">
+          <p role="alert" className="text-center text-wine-400 dark:text-wine-300">
             {error}
           </p>
         )}

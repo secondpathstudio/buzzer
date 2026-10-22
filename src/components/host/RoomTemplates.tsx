@@ -147,7 +147,7 @@ export function RoomTemplates({ room, onApplied }: { room: Room; onApplied: () =
                 onClick={() => remove(t.id, t.name)}
                 disabled={busy}
                 aria-label={`Delete template ${t.name}`}
-                className="text-neutral-400 hover:text-red-600"
+                className="text-neutral-400 hover:text-wine-400"
               >
                 ×
               </button>
@@ -158,7 +158,7 @@ export function RoomTemplates({ room, onApplied }: { room: Room; onApplied: () =
 
       {saved && <p className="text-sm text-green-700 dark:text-green-400">{saved}</p>}
       {error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}

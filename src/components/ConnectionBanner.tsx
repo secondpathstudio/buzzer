@@ -11,7 +11,7 @@ export function ConnectionBanner() {
     <div
       role="status"
       className={`fixed inset-x-0 top-0 z-50 px-4 py-2 text-center text-sm font-semibold shadow-md ${
-        status === "offline" ? "bg-red-600 text-white" : "bg-amber-400 text-amber-950"
+        status === "offline" ? "bg-wine-400 text-white" : "bg-apricot-600 text-coffee-500"
       }`}
     >
       {status === "offline"

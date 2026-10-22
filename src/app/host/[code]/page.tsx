@@ -209,7 +209,7 @@ function RoundControls({ roomId, round }: { roomId: string; round: Round | null 
         </button>
       </div>
       {error && (
-        <p role="alert" className="mt-3 text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-3 text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}
@@ -351,7 +351,7 @@ function ParticipantList({
         </ul>
       )}
       {error && (
-        <p role="alert" className="mt-3 text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-3 text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}
@@ -363,7 +363,7 @@ function StatusBadge({ status }: { status: Round["status"] }) {
   const styles = {
     waiting: "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
     open: "bg-green-600 text-white animate-pulse",
-    locked: "bg-red-600 text-white",
+    locked: "bg-wine-400 text-white",
   }[status];
   const label = { waiting: "Waiting", open: "Buzzers open", locked: "Locked" }[status];
   return (

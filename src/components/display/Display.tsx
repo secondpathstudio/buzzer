@@ -321,10 +321,10 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           </span>
         )}
         {controls && (roundError ?? points.error ?? options.error) && (
-          <span className="text-red-400">{roundError ?? points.error ?? options.error}</span>
+          <span className="text-wine-300">{roundError ?? points.error ?? options.error}</span>
         )}
         {!controls && (roundError ?? points.error) && (
-          <span className="text-red-400">{roundError ?? points.error}</span>
+          <span className="text-wine-300">{roundError ?? points.error}</span>
         )}
       </footer>
     </div>
@@ -404,9 +404,9 @@ function Results({
 
   return (
     <div className="flex w-full flex-col items-center text-center">
-      <p className="text-[4vh] font-bold uppercase tracking-[0.3em] text-amber-300/80">First</p>
+      <p className="text-[4vh] font-bold uppercase tracking-[0.3em] text-apricot-600/80">First</p>
       <p
-        className="max-w-full break-words font-black leading-[1.05] text-amber-300"
+        className="max-w-full break-words font-black leading-[1.05] text-apricot-600"
         style={{ fontSize: fitSize(winner, 26, 150) }}
       >
         {winner}

@@ -96,7 +96,7 @@ export function GroupsSettings({
         )}
       </div>
       {error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}
@@ -410,7 +410,7 @@ function GroupsEditor({
               disabled={current.groups.length <= MIN_GROUPS}
               aria-label={`Delete ${g.name}`}
               title={current.groups.length <= MIN_GROUPS ? `At least ${MIN_GROUPS} needed` : "Delete"}
-              className="flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-red-600 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-wine-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
             >
               ×
             </button>
@@ -471,7 +471,7 @@ function GroupsEditor({
                   }
                 }}
                 aria-label={`Delete preset ${p.name}`}
-                className="text-neutral-400 hover:text-red-600"
+                className="text-neutral-400 hover:text-wine-400"
               >
                 ×
               </button>
@@ -489,7 +489,7 @@ function GroupsEditor({
           <button
             onClick={() => void save()}
             disabled={saving}
-            className="flex-1 rounded-xl bg-neutral-900 px-4 py-3 font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
+            className="flex-1 rounded-xl bg-wine-500 px-4 py-3 font-semibold text-white disabled:opacity-40 dark:bg-wine-400 dark:text-white"
           >
             {saving ? "Saving…" : `Save ${room.group_noun_plural.toLowerCase()}`}
           </button>
@@ -506,7 +506,7 @@ function GroupsEditor({
         </div>
       )}
       {error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}

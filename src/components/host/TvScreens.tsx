@@ -143,7 +143,7 @@ export function TvScreens({ room }: { room: Tables<"rooms"> }) {
       )}
 
       {(error ?? options.error) && (
-        <p role="alert" className="mt-3 text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-3 text-wine-400 dark:text-wine-300">
           {error ?? options.error}
         </p>
       )}

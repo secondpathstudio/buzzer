@@ -20,7 +20,7 @@ type Step =
 const inputClass =
   "rounded-xl border border-neutral-300 bg-transparent px-4 py-3 text-lg outline-none focus:border-neutral-900 dark:border-neutral-700 dark:focus:border-neutral-100";
 const primaryButton =
-  "rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900";
+  "rounded-xl bg-wine-500 px-5 py-3 font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-wine-400 dark:text-white";
 const linkButton = "font-medium underline underline-offset-2";
 
 /**
@@ -105,7 +105,7 @@ export function AccountPanel({ onChange }: { onChange: () => void }) {
         >
           Sign out
         </button>
-        {error && <p role="alert" className="w-full text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p role="alert" className="w-full text-wine-400 dark:text-wine-300">{error}</p>}
       </section>
     );
   }
@@ -197,7 +197,7 @@ export function AccountPanel({ onChange }: { onChange: () => void }) {
         </form>
       )}
 
-      {error && <p role="alert" className="text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-wine-400 dark:text-wine-300">{error}</p>}
     </section>
   );
 }

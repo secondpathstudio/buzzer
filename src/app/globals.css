@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffaee; /* apricot-100 */
+  --foreground: #432818; /* coffee-500 */
 }
 
 @theme inline {
@@ -30,15 +30,82 @@
     100% { transform: scale(1); opacity: 1; }
   }
   @keyframes buzz-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.6); }
-    50% { box-shadow: 0 0 0 1.5rem rgb(220 38 38 / 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgb(171 44 41 / 0.6); }
+    50% { box-shadow: 0 0 0 1.5rem rgb(171 44 41 / 0); }
   }
+}
+
+/* BuzzFirst palette, numbered the Tailwind way (100 lightest, 900 darkest).
+   Green stays Tailwind's own: it means "buzzers open". */
+@theme {
+  /* The app's greys, warmed: apricot → camel → coffee. */
+  --color-neutral-50: #fffaee;
+  --color-neutral-100: #fff3d6;
+  --color-neutral-200: #eadcc3;
+  --color-neutral-300: #d6c09b;
+  --color-neutral-400: #b59a72;
+  --color-neutral-500: #8a6f4e;
+  --color-neutral-600: #6b5238;
+  --color-neutral-700: #4e3a27;
+  --color-neutral-800: #362013;
+  --color-neutral-900: #28180f;
+  --color-neutral-950: #1b100a;
+
+  --color-wine-100: #f0c4c3;
+  --color-wine-200: #e28987;
+  --color-wine-300: #d34d4b;
+  --color-wine-400: #ab2c29;
+  --color-wine-500: #6f1d1b;
+  --color-wine-600: #591715;
+  --color-wine-700: #431110;
+  --color-wine-800: #2c0b0b;
+  --color-wine-900: #160605;
+
+  --color-camel-100: #f1eade;
+  --color-camel-200: #e4d5bc;
+  --color-camel-300: #d6c09b;
+  --color-camel-400: #c9aa7a;
+  --color-camel-500: #bb9457;
+  --color-camel-600: #9c7940;
+  --color-camel-700: #755b30;
+  --color-camel-800: #4e3c20;
+  --color-camel-900: #271e10;
+
+  --color-coffee-100: #e9d0c2;
+  --color-coffee-200: #d3a184;
+  --color-coffee-300: #bd7247;
+  --color-coffee-400: #814d2e;
+  --color-coffee-500: #432818;
+  --color-coffee-600: #362013;
+  --color-coffee-700: #28180f;
+  --color-coffee-800: #1b100a;
+  --color-coffee-900: #0d0805;
+
+  --color-chocolate-100: #f1dccd;
+  --color-chocolate-200: #e4ba9c;
+  --color-chocolate-300: #d6976a;
+  --color-chocolate-400: #c97538;
+  --color-chocolate-500: #99582a;
+  --color-chocolate-600: #7a4621;
+  --color-chocolate-700: #5b3519;
+  --color-chocolate-800: #3d2311;
+  --color-chocolate-900: #1e1208;
+
+  --color-apricot-100: #fffaee;
+  --color-apricot-200: #fff5dc;
+  --color-apricot-300: #fff0cb;
+  --color-apricot-400: #ffebba;
+  --color-apricot-500: #ffe6a7;
+  --color-apricot-600: #ffce54;
+  --color-apricot-700: #feb600;
+  --color-apricot-800: #a97900;
+  --color-apricot-900: #553d00;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1b100a; /* coffee-800 */
+    --foreground: #fff0cb; /* apricot-300 */
   }
 }
 

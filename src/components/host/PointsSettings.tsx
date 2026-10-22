@@ -49,7 +49,7 @@ export function PointsSettings({ room }: { room: Room }) {
         )}
       </div>
       {error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}
@@ -100,7 +100,7 @@ function PointsEditor({ room }: { room: Room }) {
                 onClick={() => setDraft(values.filter((_, j) => j !== i))}
                 disabled={values.length <= 1}
                 aria-label={`Remove ${v}`}
-                className="flex size-6 items-center justify-center rounded-full text-neutral-400 hover:bg-red-600 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+                className="flex size-6 items-center justify-center rounded-full text-neutral-400 hover:bg-wine-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
               >
                 ×
               </button>
@@ -116,7 +116,7 @@ function PointsEditor({ room }: { room: Room }) {
           )}
         </div>
         {!valid && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+          <p className="mt-2 text-sm text-wine-400 dark:text-wine-300">
             Use whole numbers between −{LIMIT} and {LIMIT}, not zero.
           </p>
         )}
@@ -125,7 +125,7 @@ function PointsEditor({ room }: { room: Room }) {
             <button
               onClick={() => void save()}
               disabled={!valid || saving}
-              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
+              className="rounded-lg bg-wine-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-wine-400 dark:text-white"
             >
               {saving ? "Saving…" : `Save (${parsed.filter(Boolean).map(formatDelta).join(" ")})`}
             </button>
@@ -155,7 +155,7 @@ function PointsEditor({ room }: { room: Room }) {
         </label>
       )}
       {(error || options.error) && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error ?? options.error}
         </p>
       )}

@@ -129,7 +129,7 @@ export function MediaPicker({
               <button
                 onClick={() => void upload()}
                 disabled={uploading}
-                className="rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
+                className="rounded-lg bg-wine-500 px-4 py-2 font-semibold text-white disabled:opacity-40 dark:bg-wine-400 dark:text-white"
               >
                 {uploading ? `Uploading ${Math.round((progress ?? 0) * 100)}%` : "Upload"}
               </button>
@@ -151,7 +151,7 @@ export function MediaPicker({
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => fileInput.current?.click()}
-                className="rounded-lg bg-neutral-900 px-4 py-2 font-semibold text-white dark:bg-white dark:text-neutral-900"
+                className="rounded-lg bg-wine-500 px-4 py-2 font-semibold text-white dark:bg-wine-400 dark:text-white"
               >
                 Upload…
               </button>
@@ -168,7 +168,7 @@ export function MediaPicker({
             className="hidden"
           />
           {error && (
-            <p role="alert" className="text-red-600 dark:text-red-400">
+            <p role="alert" className="text-wine-400 dark:text-wine-300">
               {error}
             </p>
           )}
@@ -206,7 +206,7 @@ export function MediaPicker({
                     <button
                       onClick={() => void remove(asset)}
                       aria-label={`Delete ${asset.label ?? "file"}`}
-                      className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 hover:bg-red-600 focus-visible:opacity-100 group-hover:opacity-100"
+                      className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 hover:bg-wine-400 focus-visible:opacity-100 group-hover:opacity-100"
                     >
                       ×
                     </button>

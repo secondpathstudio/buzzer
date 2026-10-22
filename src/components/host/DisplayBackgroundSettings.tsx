@@ -82,7 +82,7 @@ function BackgroundEditor({ room }: { room: Room }) {
       {assetId && <DimSlider room={room} onError={setError} />}
 
       {error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}

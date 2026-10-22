@@ -324,7 +324,7 @@ function JoinForm({
           </button>
         )}
         {error && (
-          <p role="alert" className="text-center text-red-600 dark:text-red-400">
+          <p role="alert" className="text-center text-wine-400 dark:text-wine-300">
             {error}
           </p>
         )}
@@ -458,7 +458,7 @@ function ChooseGroup({
         label={`Tap a ${room.group_noun.toLowerCase()} to join it`}
       />
       {error && (
-        <p role="alert" className="text-center text-red-600 dark:text-red-400">
+        <p role="alert" className="text-center text-wine-400 dark:text-wine-300">
           {error}
         </p>
       )}
@@ -594,7 +594,7 @@ function Buzzer({
         </button>
         {round && <p className="text-neutral-500">Round {round.number}</p>}
         {shownError && (
-          <p role="alert" className="text-center text-red-600 dark:text-red-400">
+          <p role="alert" className="text-center text-wine-400 dark:text-wine-300">
             {shownError}
           </p>
         )}
@@ -619,11 +619,11 @@ function buttonState(round: Round | null | undefined, position: number | undefin
       kind: "buzzed",
       label: position === 1 ? "First!" : `#${position}`,
       sub: position === 1 ? "You buzzed first" : `You were #${position}`,
-      className: position === 1 ? "bg-amber-400 text-amber-950" : "bg-sky-600 text-white",
+      className: position === 1 ? "bg-apricot-600 text-coffee-500" : "bg-chocolate-500 text-white",
     } as const;
   }
   if (pending) {
-    return { kind: "pending", label: "BUZZ", sub: undefined, className: "bg-red-700 text-white scale-95" } as const;
+    return { kind: "pending", label: "BUZZ", sub: undefined, className: "bg-wine-500 text-white scale-95" } as const;
   }
   switch (round?.status) {
     case "open":
@@ -631,7 +631,7 @@ function buttonState(round: Round | null | undefined, position: number | undefin
         kind: "open",
         label: "BUZZ",
         sub: undefined,
-        className: "bg-red-600 text-white animate-buzz-pulse",
+        className: "bg-wine-400 text-white animate-buzz-pulse",
       } as const;
     case "locked":
       return {
