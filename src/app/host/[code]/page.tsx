@@ -190,20 +190,20 @@ function RoundControls({ roomId, round }: { roomId: string; round: Round | null 
           disabled={status !== "waiting" || !!pending}
           className={buttonClass(status === "waiting" ? "go" : "secondary")}
         >
-          Open
+          Start
         </button>
         <button
           onClick={() => run("lock_round")}
           disabled={status !== "open" || !!pending}
           className={buttonClass(status === "open" ? "primary" : "secondary")}
         >
-          Lock
+          Stop
         </button>
         <button
           onClick={() => run("reset_round")}
           disabled={!round || !!pending}
           className={buttonClass(status === "locked" ? "primary" : "secondary")}
-          title="Start a new round. Press Open when you're ready for buzzes."
+          title="Set up a new round. Press Start when you're ready for buzzes."
         >
           Reset
         </button>
@@ -254,7 +254,7 @@ function BuzzList({
           {status === "open"
             ? "Waiting for the first buzz…"
             : status === "waiting"
-              ? "Press Open to start the round."
+              ? "Press Start to begin the round."
               : "No buzzes this round."}
         </p>
       ) : (

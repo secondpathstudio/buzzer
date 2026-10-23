@@ -299,7 +299,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           </span>
         ) : controls ? (
           <span>
-            <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> lock ·{" "}
+            <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> stop ·{" "}
             <Key>Q</Key> QR · <Key>F</Key> fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
             {pointsOn && (
               <>
@@ -310,7 +310,7 @@ export function Display({ room, controls }: { room: Tables<"rooms">; controls: b
           </span>
         ) : (
           <span>
-            <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> lock · <Key>F</Key>{" "}
+            <Key>Space</Key> {nextLabel(status)} · <Key>R</Key> reset · <Key>L</Key> stop · <Key>F</Key>{" "}
             fullscreen · <Key>M</Key> {muted ? "unmute" : "mute"}
             {pointsOn && (
               <>
@@ -449,7 +449,7 @@ function statusLabel(status: Round["status"]) {
 }
 
 function nextLabel(status: Round["status"] | undefined) {
-  return status === "waiting" ? "open buzzers" : status === "open" ? "lock" : "next round";
+  return status === "waiting" ? "start" : status === "open" ? "stop" : "next round";
 }
 
 function toggleFullscreen() {
